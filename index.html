@@ -1463,21 +1463,7 @@ const signInWithGoogle = async () => {
   });
 };
               
-              const authorized = await checkAuthorization(user);
-              
-              if (authorized) {
-                startListening();
-                loadAuthorizedUsers();
-              }
-            } else {
-              currentUser.value = null;
-              isAuthorized.value = false;
-              role.value = '';
-            }
-            
-            loading.value = false;
-          });
-        };
+             
 
         // === 資料監聽 ===
         const startListening = () => {
