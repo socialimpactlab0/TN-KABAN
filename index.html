@@ -1265,26 +1265,30 @@
           };
         };
 
-       // === Google 登入功能 ===
-        const signInWithGoogle = async () => {
-          try {
-            loading.value = true;
-            error.value = '';
-            const provider = new firebase.auth.GoogleAuthProvider();
-            await auth.signInWithPopup(provider);
-          } catch (err) {
-            console.error('Google 登入失敗:', err);
-            if (err.code === 'auth/popup-closed-by-user') {
-              error.value = '登入視窗已關閉，請重試';
-            } else if (err.code === 'auth/unauthorized-domain') {
-              error.value = '此網域未授權，請聯絡管理員';
-            } else {
-              error.value = '登入失敗：' + err.message;
-            }
-            showRetryLogin.value = true;
-            loading.value = false;
-          }
-        };
+      // Google 登入
+const signInWithGoogle = async () => {
+  loading.value = true;
+  error.value = '';
+  
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    const result = await auth.signInWithPopup(provider);
+    currentUser.value = result.user;
+    await checkAuthorization();
+  } catch (err) {
+    // 使用者取消登入或關閉視窗
+    if (err.code === 'auth/popup-closed-by-user' || 
+        err.code === 'auth/cancelled-popup-request') {
+      console.log('使用者取消登入');
+      loading.value = false;
+      return;
+    }
+    // 其他錯誤
+    console.error('登入失敗:', err);
+    error.value = '登入失敗：' + err.message;
+    loading.value = false;
+  }
+};
         
         const signOut = async () => {
           try {
