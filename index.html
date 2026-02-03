@@ -1272,29 +1272,18 @@ const signInWithGoogle = async () => {
   
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
-    
-    // 先彈出 Google 登入視窗，不顯示載入中
     const result = await auth.signInWithPopup(provider);
-    
-    // 登入成功後才顯示載入中
-    loading.value = true;
-    currentUser.value = result.user;
-    await checkAuthorization();
+    // 登入成功後 onAuthStateChanged 會自動處理
     
   } catch (err) {
-    // 使用者取消登入或關閉視窗
     if (err.code === 'auth/popup-closed-by-user' || 
         err.code === 'auth/cancelled-popup-request') {
       console.log('使用者取消登入');
-      // 不需要做任何事，保持在登入畫面
       return;
     }
-    // 其他錯誤
     console.error('登入失敗:', err);
     error.value = '登入失敗：' + err.message;
   }
-  
-  loading.value = false;
 };
         
         const signOut = async () => {
@@ -1430,18 +1419,46 @@ const signInWithGoogle = async () => {
         };
 
         // === 初始化 ===
-        const initialize = async () => {
-  // 檢查是否已登入
+       const initialize = async () => {
+  // 監聽登入狀態變化
   auth.onAuthStateChanged(async (user) => {
     if (user) {
-      // 已登入，顯示載入中
+      // 已登入
       loading.value = true;
       currentUser.value = user;
-      await checkAuthorization();
+      
+      try {
+        // 檢查是否為授權使用者
+        const userDoc = await db.collection('authorized_users').doc(user.email.toLowerCase()).get();
+        
+        if (userDoc.exists) {
+          // 已授權
+          isAuthorized.value = true;
+          role.value = userDoc.data().role || 'member';
+          
+          // 更新最後登入時間
+          await db.collection('authorized_users').doc(user.email.toLowerCase()).update({
+            lastLogin: new Date().toISOString()
+          });
+          
+          // 開始監聽資料
+          startListening();
+          loadAuthorizedUsers();
+        } else {
+          // 未授權
+          isAuthorized.value = false;
+        }
+      } catch (err) {
+        console.error('檢查授權失敗:', err);
+        error.value = '檢查授權失敗：' + err.message;
+      }
+      
       loading.value = false;
     } else {
-      // 未登入，直接顯示登入畫面（不顯示載入中）
+      // 未登入，顯示登入畫面
       loading.value = false;
+      currentUser.value = null;
+      isAuthorized.value = false;
     }
   });
 };
