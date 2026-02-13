@@ -11,6 +11,16 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Noto Sans TC', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
   <style>
     * { font-family: 'Noto Sans TC', sans-serif; }
     .drag-over { background-color: #e0e7ff !important; border: 2px dashed #6366f1 !important; }
@@ -20,31 +30,30 @@
     .scrollbar-thin::-webkit-scrollbar-thumb { background: #c5c5c5; border-radius: 3px; }
     .scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #a8a8a8; }
     .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .dark .scrollbar-thin::-webkit-scrollbar-track { background: #374151; }
+    .dark .scrollbar-thin::-webkit-scrollbar-thumb { background: #6b7280; }
+    .fade-enter-active, .fade-leave-active { transition: opacity 0.2s; }
+    .fade-enter-from, .fade-leave-to { opacity: 0; }
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-gray-100 dark:bg-gray-900 min-h-screen transition-colors duration-300">
   <div id="app">
     <!-- 載入中 -->
     <div v-if="loading" class="min-h-screen flex items-center justify-center">
       <div class="text-center">
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-        <p class="text-gray-600">載入中...</p>
+        <p class="text-gray-600 dark:text-gray-400">載入中...</p>
       </div>
     </div>
 
     <!-- 錯誤訊息 -->
     <div v-else-if="error" class="min-h-screen flex items-center justify-center">
-      <div class="bg-white p-8 rounded-xl shadow-lg text-center max-w-md">
+      <div class="bg-white dark:bg-gray-800 p-8 rounded-xl shadow-lg text-center max-w-md">
         <div class="text-red-500 text-5xl mb-4">⚠️</div>
-        <h2 class="text-xl font-bold text-gray-800 mb-2">無法載入</h2>
-        <p class="text-gray-600 mb-4">{{ error }}</p>
-        <button 
-          v-if="showRetryLogin"
-          @click="signInWithGoogle"
-          class="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
-        >
-          重新登入
-        </button>
+        <h2 class="text-xl font-bold text-gray-800 dark:text-gray-200 mb-2">無法載入</h2>
+        <p class="text-gray-600 dark:text-gray-400 mb-4">{{ error }}</p>
+        <button v-if="showRetryLogin" @click="signInWithGoogle"
+          class="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600">重新登入</button>
       </div>
     </div>
 
@@ -52,13 +61,10 @@
     <div v-else-if="!currentUser" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">
       <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md mx-4 text-center">
         <div class="text-6xl mb-4">📋</div>
-        <h1 class="text-2xl font-bold text-gray-800 mb-2">團隊看板系統</h1>
-        <p class="text-gray-500 mb-6">請使用 Google 帳號登入</p>
-        
-        <button 
-          @click="signInWithGoogle"
-          class="w-full py-3 px-4 bg-white border-2 border-gray-300 rounded-xl font-medium hover:bg-gray-50 transition-colors flex items-center justify-center space-x-3"
-        >
+        <h1 class="text-2xl font-bold text-gray-800 mb-2">團隊協作系統</h1>
+        <p class="text-gray-500 mb-6">看板管理 · 共同編輯 · 即時聊天</p>
+        <button @click="signInWithGoogle"
+          class="w-full py-3 px-4 bg-white border-2 border-gray-300 rounded-xl font-medium hover:bg-gray-50 transition-colors flex items-center justify-center space-x-3">
           <svg class="w-6 h-6" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -67,10 +73,7 @@
           </svg>
           <span class="text-gray-700">使用 Google 帳號登入</span>
         </button>
-        
-        <p class="mt-6 text-sm text-gray-400">
-          首次登入需要管理員授權
-        </p>
+        <p class="mt-6 text-sm text-gray-400">首次登入需要管理員授權</p>
       </div>
     </div>
 
@@ -81,467 +84,440 @@
         <h1 class="text-2xl font-bold text-gray-800 mb-2">尚未授權</h1>
         <p class="text-gray-500 mb-2">您的帳號尚未被授權使用此系統</p>
         <p class="text-gray-400 text-sm mb-6">{{ currentUser.email }}</p>
-        
-        <button 
-          @click="signOut"
-          class="w-full py-2 px-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-        >
-          使用其他帳號登入
-        </button>
-        
-        <p class="mt-6 text-sm text-gray-400">
-          請聯絡管理員將您的 Email 加入授權名單
-        </p>
+        <button @click="signOut" class="w-full py-2 px-4 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">使用其他帳號登入</button>
+        <p class="mt-6 text-sm text-gray-400">請聯絡管理員將您的 Email 加入授權名單</p>
       </div>
     </div>
 
-    <!-- 主介面 -->
+    <!-- ===== 主介面 ===== -->
     <div v-else class="min-h-screen flex flex-col">
       <!-- 頂部導航 -->
-      <header class="bg-white shadow-sm border-b border-gray-200 px-4 py-3">
-        <div class="flex items-center justify-between">
-          <!-- 左側：標題和看板選擇 -->
+      <header class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+        <div class="flex items-center justify-between flex-wrap gap-2">
           <div class="flex items-center space-x-4">
-            <h1 class="text-xl font-bold text-gray-800 whitespace-nowrap">📋 台南團隊看板</h1>
-            
-            <!-- 看板選擇 -->
-            <div class="flex items-center space-x-2">
-              <select 
-                v-model="currentBoardId"
-                class="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none min-w-32"
-              >
+            <h1 class="text-xl font-bold text-gray-800 dark:text-gray-200 whitespace-nowrap">📋 團隊協作</h1>
+            <div class="flex items-center space-x-2" v-if="currentView === 'board' || currentView === 'calendar' || currentView === 'gantt'">
+              <select v-model="currentBoardId"
+                class="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none min-w-32">
                 <option value="">選擇看板</option>
-                <option v-for="board in boards" :key="board.id" :value="board.id">
-                  {{ board.name }}
-                </option>
+                <option v-for="board in boards" :key="board.id" :value="board.id">{{ board.name }}</option>
               </select>
-              
-              <button 
-                v-if="role === 'admin'"
-                @click="showNewBoardModal = true"
-                class="px-3 py-1.5 text-sm bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors whitespace-nowrap"
-              >
-                + 新增
-              </button>
+              <button v-if="role === 'admin'" @click="showNewBoardModal = true"
+                class="px-3 py-1.5 text-sm bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 whitespace-nowrap">+ 新增</button>
             </div>
           </div>
-          
-          <!-- 中間：視圖切換 -->
-          <div class="flex bg-gray-100 rounded-lg p-1">
-            <button 
-              @click="currentView = 'board'"
-              :class="currentView === 'board' ? 'bg-white shadow-sm' : ''"
-              class="px-3 py-1 text-sm rounded-md transition-all"
-            >
-              📋 看板
-            </button>
-            <button 
-              @click="currentView = 'calendar'"
-              :class="currentView === 'calendar' ? 'bg-white shadow-sm' : ''"
-              class="px-3 py-1 text-sm rounded-md transition-all"
-            >
-              📅 日曆
-            </button>
-            <button 
-              @click="currentView = 'gantt'"
-              :class="currentView === 'gantt' ? 'bg-white shadow-sm' : ''"
-              class="px-3 py-1 text-sm rounded-md transition-all"
-            >
-              📊 甘特圖
+
+          <!-- 視圖切換 -->
+          <div class="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1 overflow-x-auto">
+            <button v-for="v in views" :key="v.id" @click="currentView = v.id"
+              :class="currentView === v.id ? 'bg-white dark:bg-gray-600 shadow-sm' : ''"
+              class="px-3 py-1 text-sm rounded-md transition-all whitespace-nowrap dark:text-gray-200">
+              {{ v.icon }} {{ v.name }}
             </button>
           </div>
-          
-          <!-- 右側：工具和使用者 -->
+
+          <!-- 右側工具 -->
           <div class="flex items-center space-x-3">
-            <!-- 工具下拉選單 -->
-            <div class="relative" ref="toolMenuRef">
-              <button 
-                @click="showToolMenu = !showToolMenu"
-                class="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center space-x-1"
-              >
-                <span>⚙️ 工具</span>
-                <span class="text-xs">▼</span>
+            <button @click="toggleDarkMode" class="px-2 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">
+              {{ darkMode ? '☀️' : '🌙' }}
+            </button>
+            <div class="relative">
+              <button @click="showToolMenu = !showToolMenu"
+                class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center space-x-1">
+                <span>⚙️ 工具</span><span class="text-xs">▼</span>
               </button>
-              
-              <!-- 下拉選單內容 -->
-              <div 
-                v-if="showToolMenu"
-                class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
-              >
-                <button 
-                  @click="exportBackup; showToolMenu = false"
-                  class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                >
-                  <span>📥</span><span>匯出備份</span>
-                </button>
-                <button 
-                  v-if="role === 'admin'"
-                  @click="openImportModal(); showToolMenu = false"
-                  class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                >
-                  <span>📂</span><span>匯入備份</span>
-                </button>
-                <div v-if="role === 'admin'" class="border-t border-gray-100 my-1"></div>
-                <button 
-                  v-if="role === 'admin'"
-                  @click="showUserManagement = true; showToolMenu = false"
-                  class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                >
-                  <span>👥</span><span>使用者管理</span>
-                </button>
-                <button 
-                  v-if="role === 'admin' && currentBoardId"
-                  @click="deleteBoard(); showToolMenu = false"
-                  class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
-                >
-                  <span>🗑️</span><span>刪除看板</span>
-                </button>
+              <div v-if="showToolMenu"
+                class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+                <button @click="exportBackup(); showToolMenu = false"
+                  class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2">
+                  <span>📥</span><span>匯出備份</span></button>
+                <button v-if="role === 'admin'" @click="openImportModal(); showToolMenu = false"
+                  class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2">
+                  <span>📂</span><span>匯入備份</span></button>
+                <div v-if="role === 'admin'" class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+                <button v-if="role === 'admin'" @click="showUserManagement = true; showToolMenu = false"
+                  class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2">
+                  <span>👥</span><span>使用者管理</span></button>
+                <button @click="showThemeSettings = true; showToolMenu = false"
+                  class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2">
+                  <span>🎨</span><span>主題設定</span></button>
+                <button v-if="role === 'admin' && currentBoardId" @click="deleteBoard(); showToolMenu = false"
+                  class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center space-x-2">
+                  <span>🗑️</span><span>刪除看板</span></button>
               </div>
             </div>
-            
-            <!-- 使用者資訊 -->
-            <div class="flex items-center space-x-2 pl-3 border-l border-gray-200">
+            <div class="flex items-center space-x-2 pl-3 border-l border-gray-200 dark:border-gray-700">
               <img :src="currentUser.photoURL" class="w-8 h-8 rounded-full" v-if="currentUser.photoURL">
               <div class="hidden sm:block">
-                <div class="text-sm font-medium text-gray-700">{{ currentUser.displayName || currentUser.email }}</div>
+                <div class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ currentUser.displayName || currentUser.email }}</div>
                 <div class="text-xs text-gray-500">{{ role === 'admin' ? '管理員' : '成員' }}</div>
               </div>
-              <button 
-                @click="signOut"
-                class="px-2 py-1 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
-              >
-                登出
-              </button>
+              <button @click="signOut" class="px-2 py-1 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">登出</button>
             </div>
           </div>
         </div>
       </header>
 
-      <!-- 主要內容區 -->
+      <!-- ===== 主要內容區 ===== -->
       <main class="flex-1 overflow-hidden">
-        <!-- 看板視圖 -->
+
+        <!-- ===== 看板視圖 ===== -->
         <div v-if="currentView === 'board'" class="h-full p-4 overflow-x-auto">
           <div class="flex space-x-4 h-full">
-            <div 
-              v-for="column in sortedColumns" 
-              :key="column.id"
-              class="flex-shrink-0 w-80 bg-gray-100 rounded-xl flex flex-col max-h-full"
-              @dragover.prevent="onCardDragOver($event, column)"
-              @drop="onCardDrop($event, column)"
-            >
+            <div v-for="column in sortedColumns" :key="column.id"
+              class="flex-shrink-0 w-80 bg-gray-100 dark:bg-gray-800 rounded-xl flex flex-col max-h-full"
+              @dragover.prevent="$event.currentTarget.classList.add('drag-over')"
+              @dragleave="$event.currentTarget.classList.remove('drag-over')"
+              @drop="onCardDrop($event, column)">
               <div class="p-3 font-medium flex items-center justify-between" :style="{ borderTop: '3px solid ' + (column.color || '#6366f1') }">
                 <div class="flex items-center">
-                  <span>{{ column.name }}</span>
-                  <span class="ml-2 text-xs text-gray-500 bg-gray-200 px-2 py-0.5 rounded-full">
+                  <span class="dark:text-gray-200">{{ column.name }}</span>
+                  <span class="ml-2 text-xs text-gray-500 bg-gray-200 dark:bg-gray-700 px-2 py-0.5 rounded-full">
                     {{ cards.filter(c => c.columnId === column.id).length }}
                   </span>
                 </div>
                 <div class="flex items-center space-x-1">
-                  <button 
-                    @click="openNewCardModal(column)"
-                    class="p-1 hover:bg-gray-200 rounded transition-colors"
-                  >
-                    ➕
-                  </button>
-                  <button 
-                    v-if="role === 'admin'"
-                    @click="openColumnMenu(column)"
-                    class="p-1 hover:bg-gray-200 rounded transition-colors"
-                  >
-                    ⚙️
-                  </button>
+                  <button @click="openNewCardModal(column)" class="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">➕</button>
+                  <button v-if="role === 'admin'" @click="openColumnMenu(column)" class="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded">⚙️</button>
                 </div>
               </div>
-              
               <div class="flex-1 overflow-y-auto p-2 space-y-2 scrollbar-thin">
-                <div
-                  v-for="card in cards.filter(c => c.columnId === column.id).sort((a, b) => a.orderIndex - b.orderIndex)"
-                  :key="card.id"
-                  draggable="true"
-                  @dragstart="onCardDragStart($event, card)"
-                  @dragend="onCardDragEnd"
+                <div v-for="card in cards.filter(c => c.columnId === column.id).sort((a, b) => a.orderIndex - b.orderIndex)"
+                  :key="card.id" draggable="true"
+                  @dragstart="onCardDragStart($event, card)" @dragend="onCardDragEnd"
                   @click="openCardDetail(card)"
-                  class="bg-white p-3 rounded-lg shadow-sm hover:shadow-md cursor-pointer transition-shadow border border-gray-200"
-                  :class="{ 'card-dragging': draggingCard?.id === card.id }"
-                >
+                  class="bg-white dark:bg-gray-700 p-3 rounded-lg shadow-sm hover:shadow-md cursor-pointer transition-shadow border border-gray-200 dark:border-gray-600"
+                  :class="{ 'card-dragging': draggingCard?.id === card.id }">
                   <div v-if="card.labels && card.labels.length > 0" class="flex flex-wrap gap-1 mb-2">
-                    <span 
-                      v-for="label in card.labels" 
-                      :key="label"
+                    <span v-for="label in card.labels" :key="label"
                       class="px-2 py-0.5 text-xs rounded-full text-white"
-                      :class="{
-                        'bg-red-500': label === 'urgent',
-                        'bg-yellow-500': label === 'important',
-                        'bg-green-500': label === 'normal',
-                        'bg-blue-500': label === 'feature',
-                        'bg-purple-500': label === 'bug'
-                      }"
-                    >
-                      {{ labelNames[label] || label }}
-                    </span>
+                      :class="getLabelBgClass(label)">{{ labelNames[label] || label }}</span>
                   </div>
-                  
-                  <h4 class="font-medium text-gray-800 line-clamp-2">{{ card.title }}</h4>
-                  <p v-if="card.description" class="text-sm text-gray-500 mt-1 line-clamp-2">{{ card.description }}</p>
-                  
+                  <h4 class="font-medium text-gray-800 dark:text-gray-200 line-clamp-2">{{ card.title }}</h4>
+                  <p v-if="card.description" class="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{{ card.description }}</p>
                   <div class="flex items-center justify-between mt-2 text-xs text-gray-400">
                     <div class="flex items-center space-x-2">
-                      <span v-if="card.dueDate" :class="getDueDateClass(card.dueDate)">
-                        📅 {{ formatDate(card.dueDate) }}
-                      </span>
-                      <span v-if="card.checklist && card.checklist.length > 0">
-                        ✅ {{ card.checklist.filter(i => i.done).length }}/{{ card.checklist.length }}
-                      </span>
+                      <span v-if="card.dueDate" :class="getDueDateClass(card.dueDate)">📅 {{ formatDate(card.dueDate) }}</span>
+                      <span v-if="card.checklist && card.checklist.length > 0">✅ {{ card.checklist.filter(i => i.done).length }}/{{ card.checklist.length }}</span>
                     </div>
-                    <span v-if="card.assignee" class="text-gray-500">
-                      👤 {{ card.assignee }}
-                    </span>
+                    <span v-if="card.assignee" class="text-gray-500">👤 {{ card.assignee }}</span>
                   </div>
                 </div>
-                
-                <div 
-                  v-if="cards.filter(c => c.columnId === column.id).length === 0"
-                  class="text-center text-gray-400 text-sm py-8"
-                >
-                  拖拉卡片到這裡
-                </div>
+                <div v-if="cards.filter(c => c.columnId === column.id).length === 0"
+                  class="text-center text-gray-400 text-sm py-8">拖拉卡片到這裡</div>
               </div>
             </div>
-            
             <div v-if="role === 'admin'" class="flex-shrink-0 w-80">
-              <button 
-                @click="showNewColumnModal = true"
-                class="w-full p-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 hover:border-indigo-500 hover:text-indigo-500 transition-colors"
-              >
-                + 新增欄位
-              </button>
+              <button @click="showNewColumnModal = true"
+                class="w-full p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-gray-500 hover:border-indigo-500 hover:text-indigo-500 transition-colors">+ 新增欄位</button>
             </div>
           </div>
         </div>
 
-        <!-- 日曆視圖 -->
+        <!-- ===== 日曆視圖 ===== -->
         <div v-if="currentView === 'calendar'" class="h-full p-4 overflow-auto">
-          <div class="bg-white rounded-xl shadow-sm p-4">
-            <div class="flex items-center justify-end mb-4">
-              <label class="flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  v-model="showAllBoards"
-                  class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 mr-2"
-                >
-                <span class="text-sm text-gray-600">顯示全部看板的卡片</span>
-              </label>
-            </div>
-            
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4">
             <div class="flex items-center justify-between mb-4">
-              <button @click="prevMonth" class="px-3 py-1 hover:bg-gray-100 rounded-lg">◀</button>
-              <h3 class="text-lg font-medium">{{ calendarTitle }}</h3>
-              <button @click="nextMonth" class="px-3 py-1 hover:bg-gray-100 rounded-lg">▶</button>
+              <button @click="prevMonth" class="px-3 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-gray-200">◀</button>
+              <h3 class="text-lg font-medium dark:text-gray-200">{{ calendarTitle }}</h3>
+              <button @click="nextMonth" class="px-3 py-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-gray-200">▶</button>
             </div>
-            
             <div class="grid grid-cols-7 gap-1 mb-2">
-              <div v-for="day in ['日', '一', '二', '三', '四', '五', '六']" :key="day" class="text-center text-sm font-medium text-gray-500 py-2">
-                {{ day }}
-              </div>
+              <div v-for="day in ['日','一','二','三','四','五','六']" :key="day" class="text-center text-sm font-medium text-gray-500 py-2">{{ day }}</div>
             </div>
-            
             <div class="grid grid-cols-7 gap-1">
-              <div 
-                v-for="day in calendarDays" 
-                :key="day.date"
-                class="min-h-24 border border-gray-100 rounded-lg p-1"
-                :class="{ 'bg-gray-50': !day.isCurrentMonth, 'bg-blue-50': day.isToday }"
-                @dragover.prevent
-                @drop="onCalendarDrop($event, day.date)"
-              >
+              <div v-for="day in calendarDays" :key="day.date"
+                class="min-h-24 border border-gray-100 dark:border-gray-700 rounded-lg p-1"
+                :class="{ 'bg-gray-50 dark:bg-gray-900': !day.isCurrentMonth, 'bg-blue-50 dark:bg-blue-900/30': day.isToday }"
+                @dragover.prevent @drop="onCalendarDrop($event, day.date)">
                 <div class="text-xs text-gray-500 mb-1">{{ day.dayNum }}</div>
                 <div class="space-y-1">
-                  <div 
-                    v-for="card in day.cards" 
-                    :key="card.id"
-                    draggable="true"
-                    @dragstart="onCardDragStart($event, card)"
-                    @click="openCardDetail(card)"
-                    class="text-xs p-1 bg-indigo-100 text-indigo-700 rounded truncate cursor-pointer hover:bg-indigo-200"
-                  >
-                    {{ card.title }}
-                  </div>
+                  <div v-for="card in day.cards" :key="card.id" draggable="true"
+                    @dragstart="onCardDragStart($event, card)" @click="openCardDetail(card)"
+                    class="text-xs p-1 rounded truncate cursor-pointer hover:bg-indigo-200"
+                    :class="card._label === '開始' ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' : 
+                    'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300'">{{ card._label === '開始' ? '▶' : '■' }} {{ card.title }}</div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- 甘特圖視圖 -->
+        <!-- ===== 甘特圖視圖 ===== -->
         <div v-if="currentView === 'gantt'" class="h-full p-4 overflow-auto">
-          <div class="bg-white rounded-xl shadow-sm p-4">
-            <h3 class="text-lg font-medium mb-4">📊 甘特圖</h3>
-            
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4">
             <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center space-x-4">
-                <select v-model="ganttFilterAssignee" class="px-3 py-1.5 border rounded-lg text-sm">
-                  <option value="">所有成員</option>
-                  <option v-for="assignee in allAssignees" :key="assignee" :value="assignee">{{ assignee }}</option>
-                </select>
-              </div>
-              <label class="flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  v-model="showAllBoards"
-                  class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 mr-2"
-                >
-                <span class="text-sm text-gray-600">顯示全部看板的卡片</span>
-              </label>
+              <h3 class="text-lg font-medium dark:text-gray-200">📊 甘特圖</h3>
+              <select v-model="ganttFilterAssignee" class="px-3 py-1.5 border dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-200">
+                <option value="">所有成員</option>
+                <option v-for="a in allAssignees" :key="a" :value="a">{{ a }}</option>
+              </select>
             </div>
-            
             <div class="overflow-x-auto">
               <div class="min-w-max">
-                <div class="flex border-b">
-                  <div class="w-48 flex-shrink-0 p-2 font-medium text-sm text-gray-600">任務</div>
+                <div class="flex border-b dark:border-gray-700">
+                  <div class="w-48 flex-shrink-0 p-2 font-medium text-sm text-gray-600 dark:text-gray-400">任務</div>
                   <div class="flex">
-                    <div 
-                      v-for="date in ganttDates" 
-                      :key="date"
-                      class="w-8 p-1 text-center text-xs text-gray-500 border-l"
-                      :class="{ 'bg-blue-50': isToday(date) }"
-                    >
-                      {{ new Date(date).getDate() }}
-                    </div>
+                    <div v-for="date in ganttDates" :key="date"
+  class="w-8 p-1 text-center text-xs text-gray-500 border-l dark:border-gray-700"
+  :class="{ 'bg-blue-50 dark:bg-blue-900/30': isToday(date) }">{{ parseInt(date.split('-')[2]) }}</div>
                   </div>
                 </div>
-                
-                <div 
-                  v-for="card in filteredGanttCards" 
-                  :key="card.id"
-                  class="flex border-b hover:bg-gray-50"
-                >
-                  <div class="w-48 flex-shrink-0 p-2 text-sm truncate cursor-pointer hover:text-indigo-600" @click="openCardDetail(card)">
-                    {{ card.title }}
-                  </div>
-                  <div class="flex relative">
-                    <div 
-                      v-for="date in ganttDates" 
-                      :key="date"
-                      class="w-8 h-8 border-l"
-                      :class="{ 'bg-blue-50': isToday(date) }"
-                    ></div>
-                    <div 
-                      v-if="card.startDate && card.dueDate"
-                      class="absolute h-6 top-1 bg-indigo-400 rounded"
-                      :style="getGanttBarStyle(card)"
-                    ></div>
-                  </div>
+                <div v-for="card in filteredGanttCards" :key="card.id" class="flex border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                  <div class="w-48 flex-shrink-0 p-2 text-sm truncate cursor-pointer hover:text-indigo-600 dark:text-gray-200" @click="openCardDetail(card)">{{ card.title }}</div>
+                  <div class="flex">
+  <div v-for="date in ganttDates" :key="date" class="w-8 h-8 border-l dark:border-gray-700"
+    :class="{
+      'bg-blue-50 dark:bg-blue-900/30': isToday(date) && !(card.startDate && card.dueDate && date >= card.startDate && date <= card.dueDate),
+      'bg-indigo-400': card.startDate && card.dueDate && date >= card.startDate && date <= card.dueDate,
+      'rounded-l': card.startDate && date === card.startDate,
+      'rounded-r': card.dueDate && date === card.dueDate
+                     }"></div>
+                     </div> 
                 </div>
+                <div v-if="filteredGanttCards.length === 0" class="text-center text-gray-400 py-8 text-sm">沒有設定日期的任務</div>
               </div>
             </div>
           </div>
         </div>
+
+        <!-- ===== 共同編輯視圖 (新增) ===== -->
+        <div v-if="currentView === 'docs'" class="h-full p-4 overflow-auto">
+          <!-- 在線用戶 -->
+          <div class="flex items-center gap-2 mb-3 flex-wrap">
+            <span class="text-sm text-gray-500 dark:text-gray-400">在線：</span>
+            <span v-for="u in onlineUsers" :key="u.id"
+              class="inline-flex items-center gap-1 bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full text-xs">
+              <span class="w-2 h-2 bg-green-500 rounded-full"></span>{{ u.name }}
+            </span>
+          </div>
+
+          <!-- 文件頁籤 -->
+          <div class="flex items-center gap-2 mb-3 flex-wrap">
+            <button v-for="d in docList" :key="d.id" @click="switchDoc(d.id)"
+              class="px-3 py-1.5 rounded-full text-sm border transition-colors"
+              :class="currentDocId === d.id ? 'bg-indigo-500 text-white border-indigo-500' : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-600 hover:border-indigo-500'">
+              {{ d.title || '未命名' }}
+              <span v-if="d.id !== 'main'" @click.stop="removeDoc(d.id)" class="ml-1 opacity-50 hover:opacity-100">✕</span>
+            </button>
+            <button @click="createDoc" class="px-3 py-1.5 rounded-full text-sm border-2 border-dashed border-gray-300 dark:border-gray-600 text-gray-500 hover:border-indigo-500 hover:text-indigo-500">+ 新文件</button>
+          </div>
+
+          <!-- 工具列 -->
+          <div class="flex items-center gap-2 mb-3 flex-wrap">
+            <button @click="createMeetingDoc" class="px-3 py-1.5 bg-indigo-500 text-white rounded-lg text-sm hover:bg-indigo-600">📝 會議記錄</button>
+            <button @click="exportDoc" class="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg text-sm hover:bg-gray-300 dark:hover:bg-gray-600">💾 匯出</button>
+            <button @click="toggleDocLock" class="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg text-sm hover:bg-gray-300 dark:hover:bg-gray-600">
+              {{ docLocked ? '🔓 解鎖' : '🔒 鎖定' }}
+            </button>
+            <button @click="showDocVersions" class="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg text-sm hover:bg-gray-300 dark:hover:bg-gray-600">🕐 版本</button>
+            <span class="text-sm text-gray-400 ml-auto">{{ docSaveStatus }}</span>
+          </div>
+
+          <!-- 編輯器 -->
+          <textarea v-model="docContent" @input="onDocInput"
+            class="w-full min-h-[400px] p-4 border-2 rounded-xl text-sm leading-relaxed outline-none resize-y transition-colors"
+            :class="docLocked ? 'bg-gray-100 dark:bg-gray-900 text-gray-400 border-gray-200 dark:border-gray-700' : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 border-gray-300 dark:border-gray-600 focus:border-indigo-500'"
+            :readonly="docLocked"
+            placeholder="在這裡輸入內容，所有成員都能即時看到..."></textarea>
+        </div>
+
+        <!-- ===== 聊天室視圖 (新增) ===== -->
+        <div v-if="currentView === 'chat'" class="h-full p-4 flex justify-center">
+          <div class="w-full max-w-3xl bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden flex flex-col" style="height: calc(100vh - 140px);">
+            <div class="flex-1 overflow-y-auto p-4 space-y-3" id="chatBox">
+              <div v-for="msg in chatMessages" :key="msg.id" class="flex gap-2">
+                <img :src="msg.photo || ''" class="w-8 h-8 rounded-full mt-1 flex-shrink-0">
+                <div class="flex-1">
+                  <div class="bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded-xl inline-block max-w-[80%]">
+                    <div class="text-xs font-semibold text-indigo-600 dark:text-indigo-400">{{ msg.name }}</div>
+                    <div class="text-sm text-gray-800 dark:text-gray-200 mt-0.5 whitespace-pre-wrap">{{ msg.text }}</div>
+                    <div class="text-xs text-gray-400 mt-1">{{ formatMsgTime(msg.time) }}</div>
+                  </div>
+                  <div v-if="msg.readBy && msg.readBy.length > 1" class="text-xs text-gray-400 mt-0.5 ml-1">✓ 已讀 {{ msg.readBy.length - 1 }} 人</div>
+                </div>
+              </div>
+              <div v-if="chatMessages.length === 0" class="text-center text-gray-400 py-12">還沒有訊息，開始聊天吧！</div>
+            </div>
+            <div class="border-t dark:border-gray-700 p-3 flex gap-2">
+              <input v-model="chatInput" @keypress.enter="sendChat" type="text"
+                class="flex-1 px-4 py-2 border dark:border-gray-600 rounded-full text-sm bg-white dark:bg-gray-700 dark:text-gray-200 outline-none focus:border-indigo-500"
+                placeholder="輸入訊息...">
+              <button @click="sendChat" class="px-5 py-2 bg-indigo-500 text-white rounded-full text-sm hover:bg-indigo-600">發送</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 公告 / 分享視圖 (新增) ===== -->
+        <div v-if="currentView === 'share'" class="h-full p-4 overflow-auto">
+          <div class="max-w-3xl mx-auto">
+            <!-- 搜尋 -->
+            <div class="relative mb-4">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+              <input v-model="noteSearch" type="text" placeholder="搜尋公告、筆記..."
+                class="w-full pl-10 pr-4 py-2 border dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-gray-200 outline-none focus:border-indigo-500">
+            </div>
+            <!-- 新增 -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-4 mb-4 shadow-sm">
+              <h3 class="font-medium text-gray-700 dark:text-gray-200 mb-3">📎 分享資料 / 連結 / 公告</h3>
+              <input v-model="newNoteTitle" type="text" placeholder="標題"
+                class="w-full px-3 py-2 border dark:border-gray-600 rounded-lg text-sm mb-2 bg-white dark:bg-gray-700 dark:text-gray-200 outline-none focus:border-indigo-500">
+              <textarea v-model="newNoteContent" placeholder="內容或連結..." rows="2"
+                class="w-full px-3 py-2 border dark:border-gray-600 rounded-lg text-sm mb-2 bg-white dark:bg-gray-700 dark:text-gray-200 outline-none focus:border-indigo-500 resize-none"></textarea>
+              <div class="flex items-center justify-between">
+                <label class="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
+                  <input type="checkbox" v-model="newNotePinned" class="rounded"> 📌 置頂
+                </label>
+                <button @click="addNote" class="px-4 py-2 bg-indigo-500 text-white rounded-lg text-sm hover:bg-indigo-600">分享</button>
+              </div>
+            </div>
+            <!-- 列表 -->
+            <div v-for="note in filteredNotes" :key="note.id"
+              class="bg-white dark:bg-gray-800 rounded-xl p-4 mb-3 shadow-sm"
+              :class="{ 'border-l-4 border-yellow-400': note.pinned }">
+              <div class="flex items-start justify-between">
+                <div>
+                  <h4 class="font-medium text-gray-800 dark:text-gray-200">
+                    {{ note.title }}
+                    <span v-if="note.pinned" class="ml-1 text-xs bg-yellow-400 text-white px-1.5 py-0.5 rounded">📌 置頂</span>
+                  </h4>
+                  <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 whitespace-pre-wrap" v-html="linkifyText(note.content)"></p>
+                </div>
+              </div>
+              <div class="flex items-center justify-between mt-3 text-xs text-gray-400">
+                <span>{{ note.author }} · {{ formatNoteTime(note.createdAt) }}</span>
+                <div class="flex gap-2">
+                  <button @click="toggleNotePin(note)" class="hover:text-yellow-500">{{ note.pinned ? '取消置頂' : '📌 置頂' }}</button>
+                  <button @click="deleteNote(note.id)" class="hover:text-red-500">🗑️ 刪除</button>
+                </div>
+              </div>
+            </div>
+            <div v-if="filteredNotes.length === 0" class="text-center text-gray-400 py-12">還沒有分享的內容</div>
+          </div>
+        </div>
+
+        <!-- ===== 個人待辦視圖 (新增) ===== -->
+        <div v-if="currentView === 'todo'" class="h-full p-4 overflow-auto">
+          <div class="max-w-2xl mx-auto">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+              <h3 class="font-medium text-gray-800 dark:text-gray-200 mb-4">✅ 我的待辦清單</h3>
+              <div class="flex gap-2 mb-4">
+                <input v-model="newTodoText" @keypress.enter="addTodo" type="text" placeholder="新增待辦事項..."
+                  class="flex-1 px-3 py-2 border dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-200 outline-none focus:border-indigo-500">
+                <button @click="addTodo" class="px-4 py-2 bg-indigo-500 text-white rounded-lg text-sm hover:bg-indigo-600">新增</button>
+              </div>
+              <div v-for="todo in myTodos" :key="todo.id"
+                class="flex items-center gap-3 py-2 border-b dark:border-gray-700 last:border-b-0">
+                <input type="checkbox" :checked="todo.done" @change="toggleTodo(todo)"
+                  class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+                <span class="flex-1 text-sm" :class="todo.done ? 'line-through text-gray-400' : 'text-gray-800 dark:text-gray-200'">{{ todo.text }}</span>
+                <button @click="deleteTodo(todo.id)" class="text-red-400 hover:text-red-600 text-sm">✕</button>
+              </div>
+              <div v-if="myTodos.length === 0" class="text-center text-gray-400 py-8 text-sm">還沒有待辦事項</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== 活動紀錄視圖 (新增) ===== -->
+        <div v-if="currentView === 'log'" class="h-full p-4 overflow-auto">
+          <div class="max-w-3xl mx-auto">
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm">
+              <h3 class="font-medium text-gray-800 dark:text-gray-200 mb-4">📈 活動紀錄</h3>
+              <div v-for="log in activityLogs" :key="log.id"
+                class="py-2 border-b dark:border-gray-700 last:border-b-0 text-sm">
+                <span class="text-gray-400 mr-2">{{ formatLogTime(log.time) }}</span>
+                <span class="font-semibold text-indigo-600 dark:text-indigo-400">{{ log.user }}</span>
+                <span class="text-gray-600 dark:text-gray-400"> {{ log.action }}</span>
+              </div>
+              <div v-if="activityLogs.length === 0" class="text-center text-gray-400 py-8 text-sm">還沒有活動紀錄</div>
+            </div>
+          </div>
+        </div>
+
       </main>
     </div>
 
-    <!-- 新增看板彈窗 -->
+    <!-- ===== 所有彈窗 Modal ===== -->
+
+    <!-- 新增看板 -->
     <div v-if="showNewBoardModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
-        <h3 class="text-lg font-bold text-gray-800 mb-4">新增看板</h3>
-        <input 
-          v-model="newBoardName"
-          type="text"
-          placeholder="看板名稱"
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-indigo-500 outline-none"
-          @keyup.enter="createBoard"
-        >
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+        <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200 mb-4">新增看板</h3>
+        <input v-model="newBoardName" type="text" placeholder="看板名稱"
+          class="w-full px-4 py-2 border dark:border-gray-600 rounded-lg mb-4 bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none"
+          @keyup.enter="createBoard">
         <div class="flex justify-end space-x-2">
-          <button @click="showNewBoardModal = false" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">取消</button>
+          <button @click="showNewBoardModal = false" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">取消</button>
           <button @click="createBoard" class="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600">建立</button>
         </div>
       </div>
     </div>
 
-    <!-- 新增欄位彈窗 -->
+    <!-- 新增欄位 -->
     <div v-if="showNewColumnModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
-        <h3 class="text-lg font-bold text-gray-800 mb-4">新增欄位</h3>
-        <input 
-          v-model="newColumnName"
-          type="text"
-          placeholder="欄位名稱"
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-indigo-500 outline-none"
-        >
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+        <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200 mb-4">新增欄位</h3>
+        <input v-model="newColumnName" type="text" placeholder="欄位名稱"
+          class="w-full px-4 py-2 border dark:border-gray-600 rounded-lg mb-4 bg-white dark:bg-gray-700 dark:text-gray-200 outline-none">
         <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">欄位顏色</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">欄位顏色</label>
           <div class="flex space-x-2">
-            <button 
-              v-for="color in columnColors" 
-              :key="color"
-              @click="newColumnColor = color"
+            <button v-for="color in columnColors" :key="color" @click="newColumnColor = color"
               class="w-8 h-8 rounded-full border-2"
-              :class="newColumnColor === color ? 'border-gray-800' : 'border-transparent'"
-              :style="{ backgroundColor: color }"
-            ></button>
+              :class="newColumnColor === color ? 'border-gray-800 dark:border-white' : 'border-transparent'"
+              :style="{ backgroundColor: color }"></button>
           </div>
         </div>
         <div class="flex justify-end space-x-2">
-          <button @click="showNewColumnModal = false" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">取消</button>
+          <button @click="showNewColumnModal = false" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">取消</button>
           <button @click="createColumn" class="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600">建立</button>
         </div>
       </div>
     </div>
 
-    <!-- 新增卡片彈窗 -->
+    <!-- 新增卡片 -->
     <div v-if="showNewCardModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
-        <h3 class="text-lg font-bold text-gray-800 mb-4">新增卡片</h3>
-        <input 
-          v-model="newCardTitle"
-          type="text"
-          placeholder="卡片標題"
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-indigo-500 outline-none"
-          @keyup.enter="createCard"
-        >
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+        <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200 mb-4">新增卡片</h3>
+        <input v-model="newCardTitle" type="text" placeholder="卡片標題"
+          class="w-full px-4 py-2 border dark:border-gray-600 rounded-lg mb-4 bg-white dark:bg-gray-700 dark:text-gray-200 outline-none"
+          @keyup.enter="createCard">
         <div class="flex justify-end space-x-2">
-          <button @click="showNewCardModal = false" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">取消</button>
+          <button @click="showNewCardModal = false" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">取消</button>
           <button @click="createCard" class="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600">建立</button>
         </div>
       </div>
     </div>
 
-    <!-- 欄位設定選單 -->
+    <!-- 欄位設定 -->
     <div v-if="showColumnMenu" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6">
-        <h3 class="text-lg font-bold text-gray-800 mb-4">欄位設定：{{ selectedColumn?.name }}</h3>
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6">
+        <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200 mb-4">欄位設定：{{ selectedColumn?.name }}</h3>
         <div class="space-y-2">
-          <button @click="openEditColumnModal" class="w-full text-left px-4 py-2 hover:bg-gray-100 rounded-lg">✏️ 編輯欄位</button>
-          <button @click="confirmArchiveColumn" class="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 rounded-lg">🗑️ 刪除欄位</button>
+          <button @click="openEditColumnModal" class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg dark:text-gray-200">✏️ 編輯欄位</button>
+          <button @click="confirmArchiveColumn" class="w-full text-left px-4 py-2 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 rounded-lg">🗑️ 刪除欄位</button>
         </div>
-        <button @click="showColumnMenu = false" class="mt-4 w-full py-2 text-gray-600 hover:bg-gray-100 rounded-lg">取消</button>
+        <button @click="showColumnMenu = false" class="mt-4 w-full py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">取消</button>
       </div>
     </div>
 
-    <!-- 編輯欄位彈窗 -->
+    <!-- 編輯欄位 -->
     <div v-if="showEditColumnModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
-        <h3 class="text-lg font-bold text-gray-800 mb-4">編輯欄位</h3>
-        <input 
-          v-model="editingColumn.name"
-          type="text"
-          placeholder="欄位名稱"
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-indigo-500 outline-none"
-        >
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+        <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200 mb-4">編輯欄位</h3>
+        <input v-model="editingColumn.name" type="text" placeholder="欄位名稱"
+          class="w-full px-4 py-2 border dark:border-gray-600 rounded-lg mb-4 bg-white dark:bg-gray-700 dark:text-gray-200 outline-none">
         <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2">欄位顏色</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">欄位顏色</label>
           <div class="flex space-x-2">
-            <button 
-              v-for="color in columnColors" 
-              :key="color"
-              @click="editingColumn.color = color"
+            <button v-for="color in columnColors" :key="color" @click="editingColumn.color = color"
               class="w-8 h-8 rounded-full border-2"
-              :class="editingColumn.color === color ? 'border-gray-800' : 'border-transparent'"
-              :style="{ backgroundColor: color }"
-            ></button>
+              :class="editingColumn.color === color ? 'border-gray-800 dark:border-white' : 'border-transparent'"
+              :style="{ backgroundColor: color }"></button>
           </div>
         </div>
         <div class="flex justify-end space-x-2">
-          <button @click="showEditColumnModal = false" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">取消</button>
+          <button @click="showEditColumnModal = false" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">取消</button>
           <button @click="saveColumn" class="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600">儲存</button>
         </div>
       </div>
@@ -549,448 +525,266 @@
 
     <!-- 刪除欄位確認 -->
     <div v-if="showArchiveConfirm" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6">
-        <h3 class="text-lg font-bold text-gray-800 mb-2">確認刪除</h3>
-        <p class="text-gray-600 mb-4">確定要刪除「{{ archivingColumn?.name }}」欄位嗎？欄位內的所有卡片也會被刪除。</p>
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6">
+        <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200 mb-2">確認刪除</h3>
+        <p class="text-gray-600 dark:text-gray-400 mb-4">確定要刪除「{{ archivingColumn?.name }}」欄位嗎？</p>
         <div class="flex justify-end space-x-2">
-          <button @click="showArchiveConfirm = false" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">取消</button>
+          <button @click="showArchiveConfirm = false" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">取消</button>
           <button @click="archiveColumn" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">刪除</button>
         </div>
       </div>
     </div>
 
-    <!-- 匯入備份彈窗 -->
+    <!-- 卡片詳情 -->
+    <div v-if="showCardDetail" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div class="p-4 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex items-center justify-between">
+          <input v-model="editingCard.title" type="text"
+            class="text-xl font-bold text-gray-800 dark:text-gray-200 bg-transparent border-none outline-none flex-1 mr-4" placeholder="卡片標題">
+          <button @click="closeCardDetail" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+        </div>
+        <div class="flex-1 overflow-y-auto">
+          <div class="flex flex-col md:flex-row">
+            <!-- 左側 -->
+            <div class="flex-1 p-4 space-y-4">
+              <div>
+                <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">📝 描述</h4>
+                <textarea v-model="editingCard.description" rows="3"
+                  class="w-full px-3 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-200 outline-none resize-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="新增描述..."></textarea>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">🔗 外部連結</h4>
+                <div v-for="(link, i) in editingCard.externalLinks" :key="i"
+                  class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-lg mb-1 group">
+                  <a :href="link.url" target="_blank" class="text-blue-600 hover:underline truncate flex-1 mr-2 text-sm">📄 {{ link.name || link.url }}</a>
+                  <button @click="editingCard.externalLinks.splice(i, 1)" class="text-red-500 opacity-0 group-hover:opacity-100">✕</button>
+                </div>
+                <div v-if="showAddLink" class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg mt-2">
+                  <input v-model="newLinkName" type="text" placeholder="連結名稱"
+                    class="w-full px-3 py-2 border rounded-lg text-sm mb-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 outline-none">
+                  <input v-model="newLinkUrl" type="url" placeholder="連結網址"
+                    class="w-full px-3 py-2 border rounded-lg text-sm mb-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 outline-none">
+                  <div class="flex gap-2">
+                    <button @click="addCardLink" class="px-3 py-1.5 bg-blue-500 text-white text-sm rounded-lg">確認</button>
+                    <button @click="showAddLink = false" class="px-3 py-1.5 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm rounded-lg">取消</button>
+                  </div>
+                </div>
+                <button v-else @click="showAddLink = true" class="text-sm text-blue-600 hover:text-blue-800 mt-1">+ 新增外部連結</button>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">✅ 檢查清單</h4>
+                <div v-for="(item, i) in editingCard.checklist" :key="i" class="flex items-center space-x-2 mb-1">
+                  <input type="checkbox" v-model="item.done" class="w-4 h-4 text-indigo-600 rounded">
+                  <input v-model="item.text" type="text"
+                    class="flex-1 px-2 py-1 border-b border-transparent hover:border-gray-300 focus:border-indigo-500 outline-none text-sm bg-transparent dark:text-gray-200"
+                    :class="{ 'line-through text-gray-400': item.done }">
+                  <button @click="editingCard.checklist.splice(i, 1)" class="text-red-500 text-sm">✕</button>
+                </div>
+                <button @click="editingCard.checklist = editingCard.checklist || []; editingCard.checklist.push({ text: '', done: false })"
+                  class="mt-1 text-sm text-indigo-600 hover:text-indigo-800">+ 新增項目</button>
+              </div>
+              <div>
+                <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">💬 留言</h4>
+                <div class="flex space-x-2 mb-3">
+                  <input v-model="newComment" type="text" placeholder="輸入留言..."
+                    class="flex-1 px-3 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-200 outline-none text-sm focus:ring-2 focus:ring-indigo-500"
+                    @keyup.enter="addComment">
+                  <button @click="addComment" class="px-4 py-2 bg-indigo-500 text-white rounded-lg text-sm hover:bg-indigo-600">送出</button>
+                </div>
+                <div v-for="c in cardComments" :key="c.id" class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 mb-2">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="font-medium text-sm text-gray-800 dark:text-gray-200">{{ c.author }}</span>
+                    <span class="text-xs text-gray-500">{{ formatDateTime(c.createdAt) }}</span>
+                  </div>
+                  <p class="text-gray-600 dark:text-gray-400 text-sm">{{ c.content }}</p>
+                </div>
+              </div>
+            </div>
+            <!-- 右側 -->
+            <div class="w-full md:w-64 p-4 bg-gray-50 dark:bg-gray-900 border-t md:border-t-0 md:border-l dark:border-gray-700 space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">狀態</label>
+                <select v-model="editingCard.columnId"
+                  class="w-full px-3 py-2 border dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-200 outline-none">
+                  <option v-for="col in columns" :key="col.id" :value="col.id">{{ col.name }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">指派人</label>
+                <input v-model="editingCard.assignee" type="text" placeholder="輸入名字"
+                  class="w-full px-3 py-2 border dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-200 outline-none">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">開始日期</label>
+                <input v-model="editingCard.startDate" type="date"
+                  class="w-full px-3 py-2 border dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-200 outline-none">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">到期日</label>
+                <input v-model="editingCard.dueDate" type="date"
+                  class="w-full px-3 py-2 border dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-200 outline-none">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">標籤</label>
+                <div class="flex flex-wrap gap-2">
+                  <button v-for="(name, key) in labelNames" :key="key" @click="toggleLabel(key)"
+                    class="px-2 py-1 text-xs rounded-full transition-colors"
+                    :class="editingCard.labels?.includes(key) ? 'text-white ' + getLabelBgClass(key) : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300'">{{ name }}</button>
+                </div>
+              </div>
+              <div class="pt-4 border-t dark:border-gray-700 space-y-2">
+                <button @click="saveCard" class="w-full py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600">💾 儲存變更</button>
+                <button @click="deleteCard" class="w-full py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">🗑️ 刪除卡片</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 使用者管理 -->
+    <div v-if="showUserManagement" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+        <div class="p-4 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex items-center justify-between">
+          <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200">👥 使用者管理</h3>
+          <button @click="showUserManagement = false" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+        </div>
+        <div class="p-4 flex-1 overflow-y-auto">
+          <div class="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <h4 class="font-medium text-gray-700 dark:text-gray-200 mb-3">新增授權使用者</h4>
+            <div class="flex space-x-2">
+              <input v-model="newUserEmail" type="email" placeholder="輸入 Email"
+                class="flex-1 px-3 py-2 border dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-200 outline-none"
+                @keyup.enter="addUser">
+              <select v-model="newUserRole" class="px-3 py-2 border dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-200">
+                <option value="member">成員</option>
+                <option value="admin">管理員</option>
+              </select>
+              <button @click="addUser" class="px-4 py-2 bg-indigo-500 text-white rounded-lg text-sm hover:bg-indigo-600">新增</button>
+            </div>
+          </div>
+          <h4 class="font-medium text-gray-700 dark:text-gray-200 mb-3">已授權使用者（{{ authorizedUsers.length }} 人）</h4>
+          <div class="space-y-2">
+            <div v-for="user in authorizedUsers" :key="user.id"
+              class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center text-indigo-600 dark:text-indigo-300 font-medium">
+                  {{ user.email.charAt(0).toUpperCase() }}
+                </div>
+                <div>
+                  <div class="font-medium text-gray-800 dark:text-gray-200">{{ user.email }}</div>
+                  <div class="text-xs text-gray-500">{{ user.lastLogin ? '上次登入：' + formatDateTime(user.lastLogin) : '尚未登入' }}</div>
+                </div>
+              </div>
+              <div class="flex items-center space-x-2">
+                <select :value="user.role" @change="updateUserRole(user, $event.target.value)"
+                  class="px-2 py-1 border dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-600 dark:text-gray-200"
+                  :disabled="user.email === currentUser.email">
+                  <option value="member">成員</option>
+                  <option value="admin">管理員</option>
+                </select>
+                <button v-if="user.email !== currentUser.email" @click="removeUser(user)" class="p-1 text-red-500 hover:text-red-700 rounded">🗑️</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="p-4 border-t dark:border-gray-700">
+          <button @click="showUserManagement = false" class="w-full py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">關閉</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 匯入備份 -->
     <div v-if="showImportModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
-        <div class="p-4 border-b bg-gray-50">
-          <h3 class="text-lg font-bold text-gray-800">📂 匯入備份</h3>
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+        <div class="p-4 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+          <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200">📂 匯入備份</h3>
         </div>
         <div class="p-4">
-          <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">選擇備份檔案</label>
-            <input 
-              ref="importFileInput"
-              type="file" 
-              accept=".json"
-              @change="handleImportFile"
-              class="w-full px-3 py-2 border rounded-lg text-sm"
-            >
+          <input ref="importFileInput" type="file" accept=".json" @change="handleImportFile"
+            class="w-full px-3 py-2 border dark:border-gray-600 rounded-lg text-sm mb-4 bg-white dark:bg-gray-700 dark:text-gray-200">
+          <div v-if="importPreview" class="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-sm">
+            <p class="dark:text-gray-200">看板：{{ importPreview.boardCount }} 個 · 欄位：{{ importPreview.columnCount }} 個 · 卡片：{{ importPreview.cardCount }} 張</p>
           </div>
-          <div v-if="importPreview" class="mb-4 p-3 bg-blue-50 rounded-lg">
-            <h4 class="font-medium text-gray-700 mb-2">📋 備份內容預覽</h4>
-            <div class="text-sm text-gray-600 space-y-1">
-              <p>備份時間：{{ importPreview.exportDate ? new Date(importPreview.exportDate).toLocaleString('zh-TW') : '未知' }}</p>
-              <p>看板數量：{{ importPreview.boardCount }} 個</p>
-              <p>欄位數量：{{ importPreview.columnCount }} 個</p>
-              <p>卡片數量：{{ importPreview.cardCount }} 張</p>
-            </div>
-          </div>
-          <div v-if="importPreview" class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2">匯入模式</label>
-            <div class="space-y-2">
-              <label class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50" :class="{ 'border-blue-500 bg-blue-50': importMode === 'merge' }">
-                <input type="radio" v-model="importMode" value="merge" class="mt-1 mr-3">
-                <div>
-                  <div class="font-medium text-gray-800">合併匯入（推薦）</div>
-                  <div class="text-sm text-gray-500">保留現有資料，備份資料會新增進來，看板名稱加上「(匯入)」</div>
-                </div>
-              </label>
-              <label class="flex items-start p-3 border rounded-lg cursor-pointer hover:bg-gray-50" :class="{ 'border-red-500 bg-red-50': importMode === 'replace' }">
-                <input type="radio" v-model="importMode" value="replace" class="mt-1 mr-3">
-                <div>
-                  <div class="font-medium text-gray-800">覆蓋匯入</div>
-                  <div class="text-sm text-red-500">⚠️ 會清除所有現有資料！</div>
-                </div>
-              </label>
-            </div>
+          <div v-if="importPreview" class="space-y-2">
+            <label class="flex items-start p-3 border dark:border-gray-600 rounded-lg cursor-pointer"
+              :class="{ 'border-blue-500 bg-blue-50 dark:bg-blue-900/20': importMode === 'merge' }">
+              <input type="radio" v-model="importMode" value="merge" class="mt-1 mr-3">
+              <div><div class="font-medium dark:text-gray-200">合併匯入</div><div class="text-sm text-gray-500">保留現有資料</div></div>
+            </label>
+            <label class="flex items-start p-3 border dark:border-gray-600 rounded-lg cursor-pointer"
+              :class="{ 'border-red-500 bg-red-50 dark:bg-red-900/20': importMode === 'replace' }">
+              <input type="radio" v-model="importMode" value="replace" class="mt-1 mr-3">
+              <div><div class="font-medium dark:text-gray-200">覆蓋匯入</div><div class="text-sm text-red-500">⚠️ 清除所有現有資料</div></div>
+            </label>
           </div>
         </div>
-        <div class="p-4 border-t bg-gray-50 flex justify-end space-x-2">
-          <button @click="closeImportModal" class="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-lg">取消</button>
+        <div class="p-4 border-t dark:border-gray-700 flex justify-end space-x-2">
+          <button @click="closeImportModal" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">取消</button>
           <button v-if="importPreview" @click="executeImport" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">確認匯入</button>
         </div>
       </div>
     </div>
 
-    <!-- 使用者管理彈窗 -->
-    <div v-if="showUserManagement" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden flex flex-col">
-        <div class="p-4 border-b bg-gray-50 flex items-center justify-between">
-          <h3 class="text-lg font-bold text-gray-800">👥 使用者管理</h3>
-          <button @click="showUserManagement = false" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
-        </div>
-        
-        <div class="p-4 flex-1 overflow-y-auto">
-          <div class="mb-6 p-4 bg-blue-50 rounded-lg">
-            <h4 class="font-medium text-gray-700 mb-3">新增授權使用者</h4>
-            <div class="flex space-x-2">
-              <input 
-                v-model="newUserEmail"
-                type="email"
-                placeholder="輸入 Email（例如：user@gmail.com）"
-                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                @keyup.enter="addUser"
-              >
-              <select v-model="newUserRole" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                <option value="member">成員</option>
-                <option value="admin">管理員</option>
-              </select>
-              <button 
-                @click="addUser"
-                class="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 text-sm"
-              >
-                新增
-              </button>
-            </div>
-            <p class="mt-2 text-xs text-gray-500">
-              💡 新增後，該使用者用 Google 登入即可進入系統
-            </p>
-          </div>
-          
-          <div>
-            <h4 class="font-medium text-gray-700 mb-3">已授權使用者（{{ authorizedUsers.length }} 人）</h4>
-            <div class="space-y-2">
-              <div 
-                v-for="user in authorizedUsers" 
-                :key="user.id"
-                class="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-              >
-                <div class="flex items-center space-x-3">
-                  <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-600 font-medium">
-                    {{ user.email.charAt(0).toUpperCase() }}
-                  </div>
-                  <div>
-                    <div class="font-medium text-gray-800">{{ user.email }}</div>
-                    <div class="text-xs text-gray-500">
-                      {{ user.lastLogin ? '上次登入：' + formatDateTime(user.lastLogin) : '尚未登入' }}
-                    </div>
-                  </div>
-                </div>
-                <div class="flex items-center space-x-2">
-                  <select 
-                    :value="user.role"
-                    @change="updateUserRole(user, $event.target.value)"
-                    class="px-2 py-1 border border-gray-300 rounded text-sm"
-                    :disabled="user.email === currentUser.email"
-                  >
-                    <option value="member">成員</option>
-                    <option value="admin">管理員</option>
-                  </select>
-                  <button 
-                    v-if="user.email !== currentUser.email"
-                    @click="removeUser(user)"
-                    class="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              </div>
-              
-              <div v-if="authorizedUsers.length === 0" class="text-center text-gray-500 py-8">
-                尚無授權使用者
-              </div>
-            </div>
+    <!-- 主題設定 -->
+    <div v-if="showThemeSettings" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6">
+        <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200 mb-4">🎨 主題設定</h3>
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">主題顏色</label>
+          <div class="flex flex-wrap gap-3">
+            <button v-for="c in themeColors" :key="c.name" @click="setThemeColor(c)"
+              class="w-10 h-10 rounded-full border-3 transition-transform hover:scale-110"
+              :class="themeColor === c.name ? 'border-gray-800 dark:border-white scale-110' : 'border-transparent'"
+              :style="{ backgroundColor: c.primary }" :title="c.label"></button>
           </div>
         </div>
-        
-        <div class="p-4 border-t bg-gray-50">
-          <button 
-            @click="showUserManagement = false"
-            class="w-full py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
-          >
-            關閉
-          </button>
+        <div class="mb-6">
+          <label class="flex items-center gap-3 cursor-pointer">
+            <input type="checkbox" :checked="darkMode" @change="toggleDarkMode" class="w-5 h-5 text-indigo-600 rounded">
+            <span class="text-gray-700 dark:text-gray-200">🌙 深色模式</span>
+          </label>
+        </div>
+        <button @click="showThemeSettings = false" class="w-full py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">關閉</button>
+      </div>
+    </div>
+
+    <!-- 版本紀錄 -->
+    <div v-if="showVersionModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[80vh] overflow-hidden flex flex-col">
+        <div class="p-4 border-b dark:border-gray-700">
+          <h3 class="text-lg font-bold text-gray-800 dark:text-gray-200">🕐 版本紀錄</h3>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4">
+          <div v-for="v in docVersions" :key="v.id" @click="restoreVersion(v)"
+            class="p-3 border dark:border-gray-700 rounded-lg mb-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700">
+            <div class="flex justify-between items-center mb-1">
+              <span class="font-medium text-sm text-gray-800 dark:text-gray-200">{{ v.editBy }}</span>
+              <span class="text-xs text-gray-400">{{ formatLogTime(v.time) }}</span>
+            </div>
+            <p class="text-xs text-gray-500 truncate">{{ (v.content || '').substring(0, 80) }}...</p>
+          </div>
+          <div v-if="docVersions.length === 0" class="text-center text-gray-400 py-8 text-sm">還沒有版本紀錄</div>
+        </div>
+        <div class="p-4 border-t dark:border-gray-700">
+          <button @click="showVersionModal = false" class="w-full py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg">關閉</button>
         </div>
       </div>
     </div>
 
-    <!-- Toast 通知 -->
+    <!-- Toast -->
     <div v-if="toast.show" class="fixed bottom-4 right-4 z-50">
-      <div 
-        class="px-4 py-3 rounded-lg shadow-lg text-white"
-        :class="{
-          'bg-green-500': toast.type === 'success',
-          'bg-red-500': toast.type === 'error',
-          'bg-blue-500': toast.type === 'info'
-        }"
-      >
+      <div class="px-4 py-3 rounded-lg shadow-lg text-white"
+        :class="{ 'bg-green-500': toast.type === 'success', 'bg-red-500': toast.type === 'error', 'bg-blue-500': toast.type === 'info' }">
         {{ toast.message }}
-      </div>
-    </div>
-
-    <!-- 卡片詳情彈窗 -->
-    <div v-if="showCardDetail" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-        <div class="p-4 border-b bg-gray-50 flex items-center justify-between">
-          <input 
-            v-model="editingCard.title"
-            type="text"
-            class="text-xl font-bold text-gray-800 bg-transparent border-none outline-none flex-1 mr-4"
-            placeholder="卡片標題"
-          >
-          <button @click="closeCardDetail" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
-        </div>
-        
-        <div class="flex-1 overflow-y-auto">
-          <div class="flex flex-col md:flex-row">
-            <div class="flex-1 p-4 space-y-4">
-              <div>
-                <h4 class="font-medium text-gray-700 mb-2">📝 描述</h4>
-                <textarea 
-                  v-model="editingCard.description"
-                  rows="3"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none resize-none"
-                  placeholder="新增描述..."
-                ></textarea>
-              </div>
-              
-              <div class="mb-6">
-                <h4 class="font-medium text-gray-700 mb-2 flex items-center">
-                  <span class="mr-2">📷</span>圖片
-                </h4>
-                <div v-if="editingCard.images && editingCard.images.length > 0" class="grid grid-cols-2 md:grid-cols-3 gap-2 mb-3">
-                  <div v-for="(img, index) in editingCard.images" :key="index" class="relative group">
-                    <img :src="img" class="w-full h-24 object-cover rounded-lg">
-                    <button 
-                      @click="removeImage(index)"
-                      class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 text-xs opacity-0 group-hover:opacity-100 transition-opacity"
-                    >✕</button>
-                  </div>
-                </div>
-                <div class="flex items-center space-x-2">
-                  <label class="cursor-pointer px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-600 transition-colors">
-                    <span>+ 上傳圖片</span>
-                    <input type="file" accept="image/*" @change="uploadImage" class="hidden" :disabled="uploading">
-                  </label>
-                  <span v-if="uploading" class="text-sm text-gray-500">上傳中...</span>
-                </div>
-                <p class="text-xs text-gray-400 mt-1">⚠️ 需要 Firebase Storage（目前 Spark 方案不支援）</p>
-              </div>
-              
-              <div class="mb-6">
-                <h4 class="font-medium text-gray-700 mb-2 flex items-center">
-                  <span class="mr-2">📎</span>檔案
-                </h4>
-                <div v-if="editingCard.files && editingCard.files.length > 0" class="space-y-2 mb-3">
-                  <div v-for="(file, index) in editingCard.files" :key="index" class="flex items-center justify-between p-2 bg-gray-50 rounded-lg group">
-                    <a :href="file.url" target="_blank" class="text-blue-600 hover:text-blue-800 hover:underline truncate flex-1 mr-2">
-                      📄 {{ file.name }}
-                    </a>
-                    <button @click="removeFile(index)" class="text-red-500 hover:text-red-700 opacity-0 group-hover:opacity-100 transition-opacity">✕</button>
-                  </div>
-                </div>
-                <div class="flex items-center space-x-2">
-                  <label class="cursor-pointer px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm text-gray-600 transition-colors">
-                    <span>+ 上傳檔案</span>
-                    <input type="file" @change="uploadFile" class="hidden" :disabled="uploading">
-                  </label>
-                </div>
-                <p class="text-xs text-gray-400 mt-1">⚠️ 需要 Firebase Storage（目前 Spark 方案不支援）</p>
-              </div>
-              
-              <div class="mb-6">
-                <h4 class="font-medium text-gray-700 mb-2 flex items-center">
-                  <span class="mr-2">🔗</span>外部連結（Google Drive 等）
-                </h4>
-                <div v-if="editingCard.externalLinks && editingCard.externalLinks.length > 0" class="space-y-2 mb-3">
-                  <div 
-                    v-for="(link, index) in editingCard.externalLinks" 
-                    :key="index"
-                    class="flex items-center justify-between p-2 bg-gray-50 rounded-lg group"
-                  >
-                    <a 
-                      :href="link.url" 
-                      target="_blank" 
-                      class="text-blue-600 hover:text-blue-800 hover:underline truncate flex-1 mr-2"
-                    >
-                      📄 {{ link.name || link.url }}
-                    </a>
-                    <button 
-                      @click="removeExternalLink(index)"
-                      class="text-red-500 hover:text-red-700 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >✕</button>
-                  </div>
-                </div>
-                <div v-if="showAddExternalLink" class="p-3 bg-blue-50 rounded-lg mb-2">
-                  <input 
-                    v-model="newExternalLink.name"
-                    type="text" 
-                    placeholder="連結名稱（例如：會議記錄.pdf）"
-                    class="w-full px-3 py-2 border rounded-lg mb-2 text-sm"
-                  >
-                  <input 
-                    v-model="newExternalLink.url"
-                    type="url" 
-                    placeholder="貼上連結（Google Drive、Dropbox 等）"
-                    class="w-full px-3 py-2 border rounded-lg mb-2 text-sm"
-                  >
-                  <div class="flex space-x-2">
-                    <button 
-                      @click="addExternalLink"
-                      class="px-3 py-1.5 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600"
-                    >確認新增</button>
-                    <button 
-                      @click="showAddExternalLink = false"
-                      class="px-3 py-1.5 bg-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-400"
-                    >取消</button>
-                  </div>
-                </div>
-                <button 
-                  v-if="!showAddExternalLink"
-                  @click="showAddExternalLink = true"
-                  class="text-sm text-blue-600 hover:text-blue-800"
-                >+ 新增外部連結</button>
-                <div class="mt-2 text-xs text-gray-500">
-                  💡 提示：將檔案上傳到 Google Drive，右鍵「共用」→「知道連結的人都可以查看」→ 複製連結貼上
-                </div>
-              </div>
-              
-              <div>
-                <h4 class="font-medium text-gray-700 mb-2">✅ 檢查清單</h4>
-                <div class="space-y-2">
-                  <div 
-                    v-for="(item, index) in editingCard.checklist" 
-                    :key="index"
-                    class="flex items-center space-x-2"
-                  >
-                    <input 
-                      type="checkbox" 
-                      v-model="item.done"
-                      class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
-                    >
-                    <input 
-                      v-model="item.text"
-                      type="text"
-                      class="flex-1 px-2 py-1 border-b border-transparent hover:border-gray-300 focus:border-indigo-500 outline-none"
-                      :class="{ 'line-through text-gray-400': item.done }"
-                    >
-                    <button @click="editingCard.checklist.splice(index, 1)" class="text-red-500 hover:text-red-700">✕</button>
-                  </div>
-                </div>
-                <button 
-                  @click="editingCard.checklist = editingCard.checklist || []; editingCard.checklist.push({ text: '', done: false })"
-                  class="mt-2 text-sm text-indigo-600 hover:text-indigo-800"
-                >
-                  + 新增項目
-                </button>
-              </div>
-              
-              <div>
-                <h4 class="font-medium text-gray-700 mb-2">💬 留言</h4>
-                <div class="flex space-x-2 mb-4">
-                  <input 
-                    v-model="newComment"
-                    type="text"
-                    placeholder="輸入留言..."
-                    class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-                    @keyup.enter="addComment"
-                  >
-                  <button 
-                    @click="addComment"
-                    class="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
-                  >
-                    送出
-                  </button>
-                </div>
-                <div class="space-y-3">
-                  <div 
-                    v-for="comment in cardComments" 
-                    :key="comment.id"
-                    class="bg-gray-50 rounded-lg p-3"
-                  >
-                    <div class="flex items-center justify-between mb-1">
-                      <span class="font-medium text-sm text-gray-800">{{ comment.author }}</span>
-                      <span class="text-xs text-gray-500">{{ formatDateTime(comment.createdAt) }}</span>
-                    </div>
-                    <p class="text-gray-600 text-sm">{{ comment.content }}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div class="w-full md:w-64 p-4 bg-gray-50 border-t md:border-t-0 md:border-l space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">狀態</label>
-                <select 
-                  v-model="editingCard.columnId"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                >
-                  <option v-for="column in columns" :key="column.id" :value="column.id">
-                    {{ column.name }}
-                  </option>
-                </select>
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">指派人</label>
-                <input 
-                  v-model="editingCard.assignee"
-                  type="text"
-                  placeholder="輸入名字"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                >
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">開始日期</label>
-                <input 
-                  v-model="editingCard.startDate"
-                  type="date"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                >
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">到期日</label>
-                <input 
-                  v-model="editingCard.dueDate"
-                  type="date"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                >
-              </div>
-              
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">標籤</label>
-                <div class="flex flex-wrap gap-2">
-                  <button 
-                    v-for="(name, key) in labelNames" 
-                    :key="key"
-                    @click="toggleLabel(key)"
-                    class="px-2 py-1 text-xs rounded-full transition-colors"
-                    :class="editingCard.labels?.includes(key) 
-                      ? 'text-white ' + getLabelBgClass(key)
-                      : 'bg-gray-200 text-gray-600 hover:bg-gray-300'"
-                  >
-                    {{ name }}
-                  </button>
-                </div>
-              </div>
-              
-              <div class="pt-4 border-t space-y-2">
-                <button 
-                  @click="saveCard"
-                  class="w-full py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors"
-                >
-                  💾 儲存變更
-                </button>
-                <button 
-                  @click="deleteCard"
-                  class="w-full py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                >
-                  🗑️ 刪除卡片
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   </div>
 
   <script>
-    const { createApp, ref, computed, watch, onMounted, onUnmounted } = Vue;
+    const { createApp, ref, computed, watch, onMounted, onUnmounted, nextTick } = Vue;
 
-    // Firebase 設定
     const firebaseConfig = {
       apiKey: "AIzaSyA_CDIvCpgWH55WIL_PGUcKx5eyLIS_UpQ",
       authDomain: "tn-kanban.firebaseapp.com",
@@ -1000,7 +794,6 @@
       appId: "1:827858027115:web:613895649b718ca0a0672e"
     };
 
-    // 初始化 Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
     const storage = firebase.storage();
@@ -1008,31 +801,29 @@
 
     createApp({
       setup() {
-        // === 狀態變數 ===
+        // ===== 基礎狀態 =====
         const loading = ref(true);
         const error = ref('');
         const showRetryLogin = ref(false);
-        
-        // Google 登入相關
         const currentUser = ref(null);
         const isAuthorized = ref(false);
         const role = ref('');
         const authorizedUsers = ref([]);
-        
-        // 使用者管理
         const showUserManagement = ref(false);
         const newUserEmail = ref('');
         const newUserRole = ref('member');
-        
-        // 看板資料
+
+        // ===== 看板狀態 =====
         const boards = ref([]);
         const columns = ref([]);
         const cards = ref([]);
         const cardComments = ref([]);
         const currentBoardId = ref('');
         const currentView = ref('board');
-        
-        // 彈窗狀態
+        const showAllBoards = ref(false);
+        const allBoardsCards = ref([]);
+
+        // ===== 彈窗狀態 =====
         const showNewBoardModal = ref(false);
         const showNewColumnModal = ref(false);
         const showNewCardModal = ref(false);
@@ -1041,1212 +832,684 @@
         const showEditColumnModal = ref(false);
         const showArchiveConfirm = ref(false);
         const showImportModal = ref(false);
-        
-        // 編輯狀態
+        const showToolMenu = ref(false);
+        const showThemeSettings = ref(false);
+        const showVersionModal = ref(false);
+
+        // ===== 編輯狀態 =====
         const editingCard = ref({});
         const editingColumn = ref({});
         const selectedColumn = ref(null);
         const archivingColumn = ref(null);
         const selectedColumnForNewCard = ref(null);
-        
-        // 輸入狀態
         const newBoardName = ref('');
         const newColumnName = ref('');
         const newColumnColor = ref('#6366f1');
         const newCardTitle = ref('');
         const newComment = ref('');
-        
-        // 上傳狀態
-        const uploading = ref(false);
-        
-        // 外部連結狀態
-        const showAddExternalLink = ref(false);
-        const newExternalLink = ref({ name: '', url: '' });
-        
-        // 匯入狀態
+        const draggingCard = ref(null);
+        const calendarDate = ref(new Date());
+        const ganttFilterAssignee = ref('');
+        const showAddLink = ref(false);
+        const newLinkName = ref('');
+        const newLinkUrl = ref('');
         const importMode = ref('merge');
         const importFileInput = ref(null);
         const importPreview = ref(null);
-        
-        // 拖拉狀態
-        const draggingCard = ref(null);
-        
-        // 日曆狀態
-        const calendarDate = ref(new Date());
-        
-        // 甘特圖狀態
-        const ganttFilterAssignee = ref('');
-        
-        // 顯示全部看板開關
-        const showAllBoards = ref(false);
-        
-        // 全部看板的卡片
-        const allBoardsCards = ref([]);
-
-        // 工具選單
-        const showToolMenu = ref(false);
-        
-        // Toast
+        const uploading = ref(false);
         const toast = ref({ show: false, message: '', type: 'info' });
-        
-        // 常數
+
+        // ===== 新增功能狀態 =====
+        // 深色模式
+        const darkMode = ref(localStorage.getItem('darkMode') === 'true');
+        const themeColor = ref(localStorage.getItem('themeColor') || 'indigo');
+
+        // 共同編輯
+        const docList = ref([]);
+        const currentDocId = ref('main');
+        const docContent = ref('');
+        const docLocked = ref(false);
+        const docSaveStatus = ref('已儲存');
+        const docVersions = ref([]);
+        let docSaveTimer = null;
+        let isRemoteDocUpdate = false;
+        let unsubscribeDoc = null;
+
+        // 聊天
+        const chatMessages = ref([]);
+        const chatInput = ref('');
+
+        // 公告分享
+        const allNotes = ref([]);
+        const newNoteTitle = ref('');
+        const newNoteContent = ref('');
+        const newNotePinned = ref(false);
+        const noteSearch = ref('');
+
+        // 個人待辦
+        const myTodos = ref([]);
+        const newTodoText = ref('');
+
+        // 活動紀錄
+        const activityLogs = ref([]);
+
+        // 在線用戶
+        const onlineUsers = ref([]);
+
+        // ===== 常數 =====
         const columnColors = ['#6366f1', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ef4444', '#06b6d4'];
-        const labelNames = {
-          urgent: '緊急',
-          important: '重要',
-          normal: '一般',
-          feature: '功能',
-          bug: '錯誤'
-        };
-        
-        // 監聽器
-        let unsubscribeBoards = null;
-        let unsubscribeColumns = null;
-        let unsubscribeCards = null;
-        let unsubscribeAllCards = null;
-        let unsubscribeUsers = null;
+        const labelNames = { urgent: '緊急', important: '重要', normal: '一般', feature: '功能', bug: '錯誤' };
+        const views = [
+          { id: 'board', icon: '📋', name: '看板' },
+          { id: 'calendar', icon: '📅', name: '日曆' },
+          { id: 'gantt', icon: '📊', name: '甘特圖' },
+          { id: 'docs', icon: '📝', name: '編輯' },
+          { id: 'chat', icon: '💬', name: '聊天' },
+          { id: 'share', icon: '📁', name: '分享' },
+          { id: 'todo', icon: '✅', name: '待辦' },
+          { id: 'log', icon: '📈', name: '紀錄' },
+        ];
+        const themeColors = [
+          { name: 'indigo', label: '靛藍', primary: '#6366f1' },
+          { name: 'purple', label: '紫色', primary: '#7c4dff' },
+          { name: 'teal', label: '青色', primary: '#00bfa5' },
+          { name: 'orange', label: '橘色', primary: '#ff6d00' },
+          { name: 'pink', label: '粉紅', primary: '#e91e63' },
+          { name: 'slate', label: '灰藍', primary: '#455a64' },
+        ];
 
-        // === 計算屬性 ===
-        const sortedColumns = computed(() => {
-          return [...columns.value].sort((a, b) => a.orderIndex - b.orderIndex);
-        });
+        // ===== 監聽器 =====
+        let unsubBoards = null, unsubColumns = null, unsubCards = null, unsubUsers = null;
+        let unsubAllCards = null, unsubDocs = null, unsubChat = null, unsubNotes = null;
+        let unsubTodos = null, unsubLogs = null, unsubOnline = null;
         
-        const displayCards = computed(() => {
-          if (showAllBoards.value) {
-            return allBoardsCards.value;
-          }
-          return cards.value;
-        });
+        const toDateStr = (d) => { const y = d.getFullYear(); const m = String(d.getMonth() + 1).padStart(2, '0'); const dd = String(d.getDate()).padStart(2, '0'); return `${y}-${m}-${dd}`; };
         
+        // ===== 計算屬性 =====
+        const sortedColumns = computed(() => [...columns.value].sort((a, b) => a.orderIndex - b.orderIndex));
+        const displayCards = computed(() => showAllBoards.value ? allBoardsCards.value : cards.value);
+
         const calendarTitle = computed(() => {
-          const year = calendarDate.value.getFullYear();
-          const month = calendarDate.value.getMonth() + 1;
-          return `${year} 年 ${month} 月`;
+          const y = calendarDate.value.getFullYear(), m = calendarDate.value.getMonth() + 1;
+          return `${y} 年 ${m} 月`;
         });
-        
+
         const calendarDays = computed(() => {
-          const year = calendarDate.value.getFullYear();
-          const month = calendarDate.value.getMonth();
-          const firstDay = new Date(year, month, 1);
-          const lastDay = new Date(year, month + 1, 0);
-          const days = [];
-          
-          for (let i = 0; i < firstDay.getDay(); i++) {
-            const d = new Date(year, month, -firstDay.getDay() + i + 1);
-            days.push({
-              date: d.toISOString().slice(0, 10),
-              dayNum: d.getDate(),
-              isCurrentMonth: false,
-              isToday: false,
-              cards: []
-            });
-          }
-          
-          const today = new Date().toISOString().slice(0, 10);
-          for (let i = 1; i <= lastDay.getDate(); i++) {
-            const d = new Date(year, month, i);
-            const dateStr = d.toISOString().slice(0, 10);
-            days.push({
-              date: dateStr,
-              dayNum: i,
-              isCurrentMonth: true,
-              isToday: dateStr === today,
-              cards: displayCards.value.filter(c => c.dueDate === dateStr)
-            });
-          }
-          
-          const remaining = 42 - days.length;
-          for (let i = 1; i <= remaining; i++) {
-            const d = new Date(year, month + 1, i);
-            days.push({
-              date: d.toISOString().slice(0, 10),
-              dayNum: d.getDate(),
-              isCurrentMonth: false,
-              isToday: false,
-              cards: []
-            });
-          }
-          
-          return days;
-        });
-        
-        const ganttDates = computed(() => {
-          const dates = [];
-          const start = new Date();
-          start.setDate(start.getDate() - 7);
-          for (let i = 0; i < 30; i++) {
-            const d = new Date(start);
-            d.setDate(d.getDate() + i);
-            dates.push(d.toISOString().slice(0, 10));
-          }
-          return dates;
-        });
-        
-        const allAssignees = computed(() => {
-          const assignees = new Set();
-          cards.value.forEach(c => {
-            if (c.assignee) assignees.add(c.assignee);
-          });
-          return Array.from(assignees);
-        });
-        
-        const filteredGanttCards = computed(() => {
-          let filtered = displayCards.value.filter(c => c.dueDate || c.startDate);
-          if (ganttFilterAssignee.value) {
-            filtered = filtered.filter(c => c.assignee === ganttFilterAssignee.value);
-          }
-          return filtered;
-        });
-
-        // === 工具函式 ===
-        const showToast = (message, type = 'info') => {
-          toast.value = { show: true, message, type };
-          setTimeout(() => { toast.value.show = false; }, 3000);
-        };
-        
-        const generateId = () => {
-          return Date.now().toString(36) + Math.random().toString(36).substr(2);
-        };
-        
-        const formatDate = (dateStr) => {
-          if (!dateStr) return '';
-          const d = new Date(dateStr);
-          return `${d.getMonth() + 1}/${d.getDate()}`;
-        };
-        
-        const formatDateTime = (timestamp) => {
-          if (!timestamp) return '';
-          const d = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-          return d.toLocaleString('zh-TW');
-        };
-        
-        const getDueDateClass = (dateStr) => {
-          if (!dateStr) return '';
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          const due = new Date(dateStr);
-          const diff = (due - today) / (1000 * 60 * 60 * 24);
-          
-          if (diff < 0) return 'text-red-600 font-medium';
-          if (diff <= 2) return 'text-orange-500';
-          return 'text-gray-500';
-        };
-        
-        const getLabelBgClass = (label) => {
-          const classes = {
-            urgent: 'bg-red-500',
-            important: 'bg-yellow-500',
-            normal: 'bg-green-500',
-            feature: 'bg-blue-500',
-            bug: 'bg-purple-500'
-          };
-          return classes[label] || 'bg-gray-500';
-        };
-        
-        const isToday = (dateStr) => {
-          return dateStr === new Date().toISOString().slice(0, 10);
-        };
-        
-        const getGanttBarStyle = (card) => {
-          const startDate = card.startDate || card.dueDate;
-          const endDate = card.dueDate || card.startDate;
-          
-          const startIndex = ganttDates.value.indexOf(startDate);
-          const endIndex = ganttDates.value.indexOf(endDate);
-          
-          if (startIndex === -1 && endIndex === -1) return { display: 'none' };
-          
-          const left = Math.max(0, startIndex) * 32;
-          const width = Math.max(1, (endIndex - startIndex + 1)) * 32;
-          
-          return {
-            left: `${left}px`,
-            width: `${Math.min(width, ganttDates.value.length * 32 - left)}px`
-          };
-        };
-
-      // Google 登入
-// Google 登入
-const signInWithGoogle = async () => {
-  error.value = '';
-  
-  try {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    const result = await auth.signInWithPopup(provider);
-    // 登入成功後 onAuthStateChanged 會自動處理
-    
-  } catch (err) {
-    if (err.code === 'auth/popup-closed-by-user' || 
-        err.code === 'auth/cancelled-popup-request') {
-      console.log('使用者取消登入');
-      return;
-    }
-    console.error('登入失敗:', err);
-    error.value = '登入失敗：' + err.message;
+  const y = calendarDate.value.getFullYear(), m = calendarDate.value.getMonth();
+  const first = new Date(y, m, 1), last = new Date(y, m + 1, 0);
+  const days = [];
+  for (let i = 0; i < first.getDay(); i++) {
+    const d = new Date(y, m, -first.getDay() + i + 1);
+    days.push({ date: toDateStr(d), dayNum: d.getDate(), isCurrentMonth: false, isToday: false, cards: [] });
   }
-};
-        
-        const signOut = async () => {
-          try {
-            await auth.signOut();
-            currentUser.value = null;
-            isAuthorized.value = false;
-            role.value = '';
-            boards.value = [];
-            columns.value = [];
-            cards.value = [];
-            showToast('已登出', 'info');
-          } catch (err) {
-            console.error('登出失敗:', err);
-            showToast('登出失敗', 'error');
-          }
-        };
-        
-        const checkAuthorization = async (user) => {
-          try {
-            const userDoc = await db.collection('authorized_users').doc(user.email).get();
-            
-            if (userDoc.exists) {
-              isAuthorized.value = true;
-              role.value = userDoc.data().role || 'member';
-              
-              await db.collection('authorized_users').doc(user.email).update({
-                lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
-                displayName: user.displayName,
-                photoURL: user.photoURL
-              });
-              
-              return true;
-            } else {
-              const usersSnapshot = await db.collection('authorized_users').get();
-              
-              if (usersSnapshot.empty) {
-                await db.collection('authorized_users').doc(user.email).set({
-                  email: user.email,
-                  role: 'admin',
-                  displayName: user.displayName,
-                  photoURL: user.photoURL,
-                  createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                  lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                
-                isAuthorized.value = true;
-                role.value = 'admin';
-                showToast('歡迎！您是第一位使用者，已自動設為管理員', 'success');
-                return true;
-              }
-              
-              isAuthorized.value = false;
-              return false;
-            }
-          } catch (err) {
-            console.error('檢查授權失敗:', err);
-            return false;
-          }
-        };
-        
-        // === 使用者管理功能 ===
-        const loadAuthorizedUsers = () => {
-          unsubscribeUsers = db.collection('authorized_users')
-            .orderBy('createdAt', 'asc')
-            .onSnapshot(snapshot => {
-              authorizedUsers.value = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-              }));
-            });
-        };
-        
-        const addUser = async () => {
-          if (!newUserEmail.value.trim()) {
-            showToast('請輸入 Email', 'error');
-            return;
-          }
-          
-          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          if (!emailRegex.test(newUserEmail.value.trim())) {
-            showToast('請輸入有效的 Email 格式', 'error');
-            return;
-          }
-          
-          const email = newUserEmail.value.trim().toLowerCase();
-          
-          try {
-            const existingUser = await db.collection('authorized_users').doc(email).get();
-            if (existingUser.exists) {
-              showToast('此 Email 已在授權名單中', 'error');
-              return;
-            }
-            
-            await db.collection('authorized_users').doc(email).set({
-              email: email,
-              role: newUserRole.value,
-              createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-              createdBy: currentUser.value.email
-            });
-            
-            newUserEmail.value = '';
-            newUserRole.value = 'member';
-            showToast('使用者已新增', 'success');
-          } catch (err) {
-            console.error('新增使用者失敗:', err);
-            showToast('新增使用者失敗', 'error');
-          }
-        };
-        
-        const updateUserRole = async (user, newRole) => {
-          try {
-            await db.collection('authorized_users').doc(user.email).update({
-              role: newRole
-            });
-            showToast('角色已更新', 'success');
-          } catch (err) {
-            console.error('更新角色失敗:', err);
-            showToast('更新角色失敗', 'error');
-          }
-        };
-        
-        const removeUser = async (user) => {
-          if (!confirm(`確定要移除「${user.email}」的授權嗎？`)) return;
-          
-          try {
-            await db.collection('authorized_users').doc(user.email).delete();
-            showToast('使用者已移除', 'success');
-          } catch (err) {
-            console.error('移除使用者失敗:', err);
-            showToast('移除使用者失敗', 'error');
-          }
-        };
+  const today = toDateStr(new Date());
+  for (let i = 1; i <= last.getDate(); i++) {
+    const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(i).padStart(2,'0')}`;
+    days.push({ date: ds, dayNum: i, isCurrentMonth: true, isToday: ds === today, cards: displayCards.value.filter(c => { if (c.startDate && ds === c.startDate) return true; if (c.dueDate && ds === c.dueDate) return true; if (!c.startDate && !c.dueDate) return false; if (c.startDate && !c.dueDate && ds === c.startDate) return true; if (!c.startDate && c.dueDate && ds === c.dueDate) return true; return false; }).map(c => ({ ...c, _label: ds === c.startDate ? '開始' : '結束' })) });
+  }
+  const rem = 42 - days.length;
+  for (let i = 1; i <= rem; i++) {
+    const d = new Date(y, m + 1, i);
+    days.push({ date: toDateStr(d), dayNum: d.getDate(), isCurrentMonth: false, isToday: false, cards: [] });
+  }
+  return days;
+});
 
-        // === 初始化 ===
-       const initialize = async () => {
-  // 監聽登入狀態變化
-  auth.onAuthStateChanged(async (user) => {
-    if (user) {
-      // 已登入
-      loading.value = true;
-      currentUser.value = user;
-      
-      try {
-        // 檢查是否為授權使用者
-        const userDoc = await db.collection('authorized_users').doc(user.email.toLowerCase()).get();
-        
-        if (userDoc.exists) {
-          // 已授權
-          isAuthorized.value = true;
-          role.value = userDoc.data().role || 'member';
-          
-          // 更新最後登入時間
-          await db.collection('authorized_users').doc(user.email.toLowerCase()).update({
-            lastLogin: new Date().toISOString()
-          });
-          
-          // 開始監聽資料
-          startListening();
-          loadAuthorizedUsers();
-        } else {
-          // 未授權
-          isAuthorized.value = false;
-        }
-      } catch (err) {
-        console.error('檢查授權失敗:', err);
-        error.value = '檢查授權失敗：' + err.message;
-      }
-      
-      loading.value = false;
-    } else {
-      // 未登入，顯示登入畫面
-      loading.value = false;
-      currentUser.value = null;
-      isAuthorized.value = false;
-    }
+        const ganttDates = computed(() => {
+  const cardsWithDates = displayCards.value.filter(c => c.startDate || c.dueDate);
+  let minDate = new Date(), maxDate = new Date();
+  minDate.setDate(minDate.getDate() - 7);
+  maxDate.setDate(maxDate.getDate() + 30);
+  cardsWithDates.forEach(c => {
+    if (c.startDate && new Date(c.startDate) < minDate) minDate = new Date(c.startDate);
+    if (c.dueDate && new Date(c.dueDate) > maxDate) maxDate = new Date(c.dueDate);
   });
+  minDate.setDate(minDate.getDate() - 2);
+  maxDate.setDate(maxDate.getDate() + 2);
+  const dates = [];
+  const current = new Date(minDate);
+  while (current <= maxDate) { dates.push(toDateStr(current)); current.setDate(current.getDate() + 1); }
+  return dates;
+});
+
+        const allAssignees = computed(() => {
+          const s = new Set(); cards.value.forEach(c => { if (c.assignee) s.add(c.assignee); }); return Array.from(s);
+        });
+
+        const filteredGanttCards = computed(() => {
+          let f = displayCards.value.filter(c => c.dueDate || c.startDate);
+          if (ganttFilterAssignee.value) f = f.filter(c => c.assignee === ganttFilterAssignee.value);
+          return f;
+        });
+
+        const filteredNotes = computed(() => {
+          let notes = [...allNotes.value];
+          if (noteSearch.value) {
+            const kw = noteSearch.value.toLowerCase();
+            notes = notes.filter(n => (n.title||'').toLowerCase().includes(kw) || (n.content||'').toLowerCase().includes(kw));
+          }
+          const pinned = notes.filter(n => n.pinned);
+          const normal = notes.filter(n => !n.pinned);
+          return [...pinned, ...normal];
+        });
+
+        // ===== 工具函式 =====
+        const showToast = (msg, type='info') => { toast.value = { show: true, message: msg, type }; setTimeout(() => toast.value.show = false, 3000); };
+        const genId = () => Date.now().toString(36) + Math.random().toString(36).substr(2);
+        const formatDate = (s) => { if (!s) return ''; const d = new Date(s); return `${d.getMonth()+1}/${d.getDate()}`; };
+        const formatDateTime = (ts) => { if (!ts) return ''; const d = ts.toDate ? ts.toDate() : new Date(ts); return d.toLocaleString('zh-TW'); };
+        const formatMsgTime = (ts) => { if (!ts) return ''; const d = ts.toDate ? ts.toDate() : new Date(ts); return d.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}); };
+        const formatLogTime = (ts) => { if (!ts) return ''; const d = ts.toDate ? ts.toDate() : new Date(ts); return d.toLocaleString('zh-TW'); };
+        const formatNoteTime = (ts) => formatLogTime(ts);
+        const getDueDateClass = (s) => { if (!s) return ''; const diff = (new Date(s) - new Date()) / 864e5; if (diff < 0) return 'text-red-600 font-medium'; if (diff <= 2) return 'text-orange-500'; return 'text-gray-500'; };
+        const getLabelBgClass = (l) => ({ urgent:'bg-red-500', important:'bg-yellow-500', normal:'bg-green-500', feature:'bg-blue-500', bug:'bg-purple-500' }[l] || 'bg-gray-500');
+        const isToday = (s) => s === toDateStr(new Date());
+        const getGanttBarStyle = (card) => {
+  const s = card.startDate || card.dueDate, e = card.dueDate || card.startDate;
+  if (!s || !e) return { display: 'none' };
+  const dates = ganttDates.value;
+  const firstDate = dates[0], lastDate = dates[dates.length - 1];
+  if (e < firstDate || s > lastDate) return { display: 'none' };
+  const clampedStart = s < firstDate ? firstDate : s;
+  const clampedEnd = e > lastDate ? lastDate : e;
+  const si = dates.indexOf(clampedStart);
+  const ei = dates.indexOf(clampedEnd);
+  if (si === -1 || ei === -1) return { display: 'none' };
+  const left = si * 32;
+  const width = Math.max(1, (ei - si + 1)) * 32;
+  return { left: left + 'px', width: width + 'px' };
 };
+  const linkifyText = (text) => { if (!text) return ''; return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" class="text-blue-600 hover:underline">$1</a>'); };
 
-        // === 資料監聽 ===
-        const startListening = () => {
-          unsubscribeBoards = db.collection('boards')
-            .orderBy('createdAt', 'asc')
-            .onSnapshot(snapshot => {
-              boards.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-              
-              if (!currentBoardId.value && boards.value.length > 0) {
-                currentBoardId.value = boards.value[0].id;
-              }
-            });
+        // ===== 深色模式 =====
+        const toggleDarkMode = () => {
+          darkMode.value = !darkMode.value;
+          localStorage.setItem('darkMode', darkMode.value);
+          document.documentElement.classList.toggle('dark', darkMode.value);
         };
-        
-        const startBoardListening = (boardId) => {
-          if (unsubscribeColumns) unsubscribeColumns();
-          if (unsubscribeCards) unsubscribeCards();
-          
-          if (!boardId) {
-            columns.value = [];
-            cards.value = [];
-            return;
+        const setThemeColor = (c) => {
+          themeColor.value = c.name;
+          localStorage.setItem('themeColor', c.name);
+          showToast(`已切換為${c.label}主題`, 'success');
+        };
+
+        // ===== Auth =====
+        const signInWithGoogle = async () => {
+        try { await auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+        catch (e) { if (e.code !== 'auth/popup-closed-by-user') { error.value = '登入失敗：' + e.message; } }
+           };
+        const signOut = async () => {
+          if (currentUser.value) {
+            await db.collection('online').doc(currentUser.value.uid).delete().catch(()=>{});
           }
-          
-          unsubscribeColumns = db.collection('columns')
-            .where('boardId', '==', boardId)
-            .onSnapshot(snapshot => {
-              columns.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            });
-          
-          unsubscribeCards = db.collection('cards')
-            .where('boardId', '==', boardId)
-            .onSnapshot(snapshot => {
-              cards.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            });
+          await auth.signOut();
+          currentUser.value = null; isAuthorized.value = false; role.value = '';
         };
-        
-        watch(currentBoardId, (newId) => {
-          startBoardListening(newId);
-        });
-        
-        let unsubscribeAllCardsListener = null;
-        
-        const startAllCardsListening = () => {
-          if (unsubscribeAllCardsListener) unsubscribeAllCardsListener();
-          
-          unsubscribeAllCardsListener = db.collection('cards')
-            .onSnapshot(snapshot => {
-              allBoardsCards.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            });
+
+        // ===== 初始化 =====
+        const initialize = () => {
+          if (darkMode.value) document.documentElement.classList.add('dark');
+                    
+             auth.onAuthStateChanged(async (user) => {
+            if (user) {
+              loading.value = true;
+              currentUser.value = user;
+              try {
+                const doc = await db.collection('authorized_users').doc(user.email.toLowerCase()).get();
+                if (doc.exists) {
+                  isAuthorized.value = true;
+                  role.value = doc.data().role || 'member';
+                  await db.collection('authorized_users').doc(user.email.toLowerCase()).update({ lastLogin: new Date().toISOString() });
+                  startAllListeners();
+                } else {
+                  const snap = await db.collection('authorized_users').get();
+                  if (snap.empty) {
+                    await db.collection('authorized_users').doc(user.email.toLowerCase()).set({
+                      email: user.email, role: 'admin', displayName: user.displayName, photoURL: user.photoURL,
+                      createdAt: firebase.firestore.FieldValue.serverTimestamp(), lastLogin: new Date().toISOString()
+                    });
+                    isAuthorized.value = true; role.value = 'admin';
+                    showToast('歡迎！已設為管理員', 'success');
+                    startAllListeners();
+                  } else { isAuthorized.value = false; }
+                }
+              } catch (e) { error.value = '檢查授權失敗'; }
+              loading.value = false;
+            } else { loading.value = false; currentUser.value = null; isAuthorized.value = false; }
+          });
         };
-        
-        watch(showAllBoards, (newVal) => {
-          if (newVal) {
-            startAllCardsListening();
-          } else {
-            if (unsubscribeAllCardsListener) {
-              unsubscribeAllCardsListener();
-              unsubscribeAllCardsListener = null;
+
+        // ===== 啟動所有監聽 =====
+        const startAllListeners = () => {
+          // 看板
+          unsubBoards = db.collection('boards').orderBy('createdAt','asc').onSnapshot(s => {
+            boards.value = s.docs.map(d => ({ id: d.id, ...d.data() }));
+            if (!currentBoardId.value && boards.value.length > 0) currentBoardId.value = boards.value[0].id;
+          });
+          // 授權用戶
+          unsubUsers = db.collection('authorized_users').orderBy('createdAt','asc').onSnapshot(s => {
+            authorizedUsers.value = s.docs.map(d => ({ id: d.id, ...d.data() }));
+          });
+          // 文件列表
+          unsubDocs = db.collection('documents').onSnapshot(s => {
+            docList.value = s.docs.map(d => ({ id: d.id, ...d.data() }));
+            if (docList.value.length === 0) {
+              db.collection('documents').doc('main').set({ title: '主文件', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
             }
-            allBoardsCards.value = [];
+          });
+          // 聊天
+          unsubChat = db.collection('chat').orderBy('time').onSnapshot(s => {
+            chatMessages.value = s.docs.map(d => ({ id: d.id, ...d.data() }));
+            nextTick(() => { const box = document.getElementById('chatBox'); if (box) box.scrollTop = box.scrollHeight; });
+          });
+          // 公告分享
+          unsubNotes = db.collection('notes').orderBy('createdAt','desc').onSnapshot(s => {
+            allNotes.value = s.docs.map(d => ({ id: d.id, ...d.data() }));
+          });
+          // 個人待辦
+          if (currentUser.value) {
+            unsubTodos = db.collection('todos').where('uid','==',currentUser.value.uid).orderBy('createdAt').onSnapshot(s => {
+              myTodos.value = s.docs.map(d => ({ id: d.id, ...d.data() }));
+            });
           }
+          // 活動紀錄
+          unsubLogs = db.collection('logs').orderBy('time','desc').limit(50).onSnapshot(s => {
+            activityLogs.value = s.docs.map(d => ({ id: d.id, ...d.data() }));
+          });
+          // 在線用戶
+          if (currentUser.value) {
+            db.collection('online').doc(currentUser.value.uid).set({
+              name: currentUser.value.displayName, photo: currentUser.value.photoURL,
+              time: firebase.firestore.FieldValue.serverTimestamp()
+            });
+          }
+          unsubOnline = db.collection('online').onSnapshot(s => {
+            onlineUsers.value = s.docs.map(d => ({ id: d.id, ...d.data() }));
+          });
+          // 載入文件
+          listenDoc();
+        };
+
+        // ===== 看板 =====
+        watch(currentBoardId, (id) => {
+          if (unsubColumns) unsubColumns();
+          if (unsubCards) unsubCards();
+          if (!id) { columns.value = []; cards.value = []; return; }
+          unsubColumns = db.collection('columns').where('boardId','==',id).onSnapshot(s => {
+            columns.value = s.docs.map(d => ({ id: d.id, ...d.data() }));
+          });
+          unsubCards = db.collection('cards').where('boardId','==',id).onSnapshot(s => {
+            cards.value = s.docs.map(d => ({ id: d.id, ...d.data() }));
+          });
         });
 
-        // === 看板功能 ===
         const createBoard = async () => {
           if (!newBoardName.value.trim()) return;
-          
-          try {
-            const boardId = generateId();
-            await db.collection('boards').doc(boardId).set({
-              name: newBoardName.value.trim(),
-              createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-              createdBy: currentUser.value.email
-            });
-            
-            currentBoardId.value = boardId;
-            newBoardName.value = '';
-            showNewBoardModal.value = false;
-            showToast('看板已建立', 'success');
-          } catch (err) {
-            console.error('建立看板失敗:', err);
-            showToast('建立看板失敗', 'error');
-          }
-        };
-        
-        const deleteBoard = async () => {
-          if (!currentBoardId.value) return;
-          
-          const board = boards.value.find(b => b.id === currentBoardId.value);
-          if (!board) return;
-          
-          const confirmMsg = `確定要刪除「${board.name}」嗎？\n\n此操作會刪除該看板內的所有欄位和卡片，且無法復原！`;
-          if (!confirm(confirmMsg)) return;
-          
-          try {
-            const batch = db.batch();
-            
-            const cardsToDelete = cards.value.filter(c => c.boardId === currentBoardId.value);
-            for (const card of cardsToDelete) {
-              batch.delete(db.collection('cards').doc(card.id));
-            }
-            
-            const columnsToDelete = columns.value.filter(c => c.boardId === currentBoardId.value);
-            for (const column of columnsToDelete) {
-              batch.delete(db.collection('columns').doc(column.id));
-            }
-            
-            batch.delete(db.collection('boards').doc(currentBoardId.value));
-            
-            await batch.commit();
-            
-            currentBoardId.value = '';
-            columns.value = [];
-            cards.value = [];
-            showToast('看板已刪除', 'success');
-          } catch (err) {
-            console.error('刪除看板失敗:', err);
-            showToast('刪除看板失敗', 'error');
-          }
+          const id = genId();
+          await db.collection('boards').doc(id).set({ name: newBoardName.value.trim(), createdAt: firebase.firestore.FieldValue.serverTimestamp(), createdBy: currentUser.value.email });
+          currentBoardId.value = id; newBoardName.value = ''; showNewBoardModal.value = false;
+          addLog('建立了看板「' + newBoardName.value + '」');
+          showToast('看板已建立','success');
         };
 
-        // === 欄位功能 ===
+        const deleteBoard = async () => {
+          const b = boards.value.find(b => b.id === currentBoardId.value);
+          if (!b || !confirm(`確定刪除「${b.name}」？所有卡片也會刪除！`)) return;
+          const batch = db.batch();
+          cards.value.filter(c => c.boardId === currentBoardId.value).forEach(c => batch.delete(db.collection('cards').doc(c.id)));
+          columns.value.filter(c => c.boardId === currentBoardId.value).forEach(c => batch.delete(db.collection('columns').doc(c.id)));
+          batch.delete(db.collection('boards').doc(currentBoardId.value));
+          await batch.commit();
+          currentBoardId.value = ''; addLog('刪除了看板'); showToast('看板已刪除','success');
+        };
+
+        // ===== 欄位 =====
         const createColumn = async () => {
           if (!newColumnName.value.trim() || !currentBoardId.value) return;
-          
-          try {
-            const maxOrder = columns.value.length > 0 
-              ? Math.max(...columns.value.map(c => c.orderIndex || 0)) 
-              : 0;
-            
-            await db.collection('columns').doc(generateId()).set({
-              boardId: currentBoardId.value,
-              name: newColumnName.value.trim(),
-              color: newColumnColor.value,
-              orderIndex: maxOrder + 1,
-              createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            
-            newColumnName.value = '';
-            newColumnColor.value = '#6366f1';
-            showNewColumnModal.value = false;
-            showToast('欄位已建立', 'success');
-          } catch (err) {
-            console.error('建立欄位失敗:', err);
-            showToast('建立欄位失敗', 'error');
-          }
+          const maxOrd = columns.value.length > 0 ? Math.max(...columns.value.map(c => c.orderIndex || 0)) : 0;
+          await db.collection('columns').doc(genId()).set({
+            boardId: currentBoardId.value, name: newColumnName.value.trim(), color: newColumnColor.value,
+            orderIndex: maxOrd + 1, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          newColumnName.value = ''; showNewColumnModal.value = false; showToast('欄位已建立','success');
         };
-        
-        const openColumnMenu = (column) => {
-          selectedColumn.value = column;
-          showColumnMenu.value = true;
-        };
-        
-        const openEditColumnModal = () => {
-          editingColumn.value = { ...selectedColumn.value };
-          showColumnMenu.value = false;
-          showEditColumnModal.value = true;
-        };
-        
-        const saveColumn = async () => {
-          try {
-            await db.collection('columns').doc(editingColumn.value.id).update({
-              name: editingColumn.value.name,
-              color: editingColumn.value.color
-            });
-            showEditColumnModal.value = false;
-            showToast('欄位已更新', 'success');
-          } catch (err) {
-            console.error('更新欄位失敗:', err);
-            showToast('更新欄位失敗', 'error');
-          }
-        };
-        
-        const confirmArchiveColumn = () => {
-          archivingColumn.value = selectedColumn.value;
-          showColumnMenu.value = false;
-          showArchiveConfirm.value = true;
-        };
-        
+        const openColumnMenu = (col) => { selectedColumn.value = col; showColumnMenu.value = true; };
+        const openEditColumnModal = () => { editingColumn.value = { ...selectedColumn.value }; showColumnMenu.value = false; showEditColumnModal.value = true; };
+        const saveColumn = async () => { await db.collection('columns').doc(editingColumn.value.id).update({ name: editingColumn.value.name, color: editingColumn.value.color }); showEditColumnModal.value = false; showToast('已更新','success'); };
+        const confirmArchiveColumn = () => { archivingColumn.value = selectedColumn.value; showColumnMenu.value = false; showArchiveConfirm.value = true; };
         const archiveColumn = async () => {
-          try {
-            const batch = db.batch();
-            
-            const cardsToDelete = cards.value.filter(c => c.columnId === archivingColumn.value.id);
-            for (const card of cardsToDelete) {
-              batch.delete(db.collection('cards').doc(card.id));
-            }
-            
-            batch.delete(db.collection('columns').doc(archivingColumn.value.id));
-            
-            await batch.commit();
-            showArchiveConfirm.value = false;
-            showToast('欄位已刪除', 'success');
-          } catch (err) {
-            console.error('刪除欄位失敗:', err);
-            showToast('刪除欄位失敗', 'error');
-          }
+          const batch = db.batch();
+          cards.value.filter(c => c.columnId === archivingColumn.value.id).forEach(c => batch.delete(db.collection('cards').doc(c.id)));
+          batch.delete(db.collection('columns').doc(archivingColumn.value.id));
+          await batch.commit(); showArchiveConfirm.value = false; showToast('欄位已刪除','success');
         };
 
-        // === 卡片功能 ===
-        const openNewCardModal = (column) => {
-          selectedColumnForNewCard.value = column;
-          showNewCardModal.value = true;
-        };
-        
+        // ===== 卡片 =====
+        const openNewCardModal = (col) => { selectedColumnForNewCard.value = col; showNewCardModal.value = true; };
         const createCard = async () => {
           if (!newCardTitle.value.trim() || !selectedColumnForNewCard.value) return;
-          
-          try {
-            const columnCards = cards.value.filter(c => c.columnId === selectedColumnForNewCard.value.id);
-            const maxOrder = columnCards.length > 0 
-              ? Math.max(...columnCards.map(c => c.orderIndex || 0)) 
-              : 0;
-            
-            await db.collection('cards').doc(generateId()).set({
-              boardId: currentBoardId.value,
-              columnId: selectedColumnForNewCard.value.id,
-              title: newCardTitle.value.trim(),
-              description: '',
-              labels: [],
-              checklist: [],
-              images: [],
-              files: [],
-              externalLinks: [],
-              orderIndex: maxOrder + 1,
-              createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-              createdBy: currentUser.value.email
-            });
-            
-            newCardTitle.value = '';
-            showNewCardModal.value = false;
-            showToast('卡片已建立', 'success');
-          } catch (err) {
-            console.error('建立卡片失敗:', err);
-            showToast('建立卡片失敗', 'error');
-          }
-        };
-        
-        const openCardDetail = async (card) => {
-          editingCard.value = { 
-            ...JSON.parse(JSON.stringify(card)),
-            images: card.images || [],
-            files: card.files || [],
-            externalLinks: card.externalLinks || [],
-            checklist: card.checklist || [],
-            labels: card.labels || []
-          };
-          showCardDetail.value = true;
-          
-          try {
-            const snapshot = await db.collection('comments')
-              .where('cardId', '==', card.id)
-              .orderBy('createdAt', 'desc')
-              .get();
-            cardComments.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          } catch (err) {
-            console.error('載入留言失敗:', err);
-            cardComments.value = [];
-          }
-        };
-        
-        const closeCardDetail = () => {
-          showCardDetail.value = false;
-          editingCard.value = {};
-          cardComments.value = [];
-          showAddExternalLink.value = false;
-          newExternalLink.value = { name: '', url: '' };
-        };
-        
-        const saveCard = async () => {
-          try {
-            const cardData = { ...editingCard.value };
-            delete cardData.id;
-            
-            await db.collection('cards').doc(editingCard.value.id).update(cardData);
-            showToast('卡片已儲存', 'success');
-            closeCardDetail();
-          } catch (err) {
-            console.error('儲存卡片失敗:', err);
-            showToast('儲存卡片失敗', 'error');
-          }
-        };
-        
-        const deleteCard = async () => {
-          if (!confirm('確定要刪除這張卡片嗎？')) return;
-          
-          try {
-            await db.collection('cards').doc(editingCard.value.id).delete();
-            showToast('卡片已刪除', 'success');
-            closeCardDetail();
-          } catch (err) {
-            console.error('刪除卡片失敗:', err);
-            showToast('刪除卡片失敗', 'error');
-          }
-        };
-        
-        const toggleLabel = (label) => {
-          if (!editingCard.value.labels) {
-            editingCard.value.labels = [];
-          }
-          const index = editingCard.value.labels.indexOf(label);
-          if (index === -1) {
-            editingCard.value.labels.push(label);
-          } else {
-            editingCard.value.labels.splice(index, 1);
-          }
-        };
-
-        // === 留言功能 ===
-        const addComment = async () => {
-          if (!newComment.value.trim() || !editingCard.value.id) return;
-          
-          try {
-            await db.collection('comments').doc(generateId()).set({
-              cardId: editingCard.value.id,
-              content: newComment.value.trim(),
-              author: currentUser.value.displayName || currentUser.value.email,
-              createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            });
-            
-            newComment.value = '';
-            
-            const snapshot = await db.collection('comments')
-              .where('cardId', '==', editingCard.value.id)
-              .orderBy('createdAt', 'desc')
-              .get();
-            cardComments.value = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            
-            showToast('留言已送出', 'success');
-          } catch (err) {
-            console.error('送出留言失敗:', err);
-            showToast('送出留言失敗', 'error');
-          }
-        };
-
-        // === 上傳功能 ===
-        const uploadImage = async (event) => {
-          const file = event.target.files[0];
-          if (!file) return;
-          
-          uploading.value = true;
-          try {
-            const fileRef = storage.ref().child(`images/${generateId()}_${file.name}`);
-            await fileRef.put(file);
-            const url = await fileRef.getDownloadURL();
-            
-            if (!editingCard.value.images) {
-              editingCard.value.images = [];
-            }
-            editingCard.value.images.push(url);
-            showToast('圖片已上傳', 'success');
-          } catch (err) {
-            console.error('上傳圖片失敗:', err);
-            showToast('上傳失敗：Spark 方案不支援 Storage', 'error');
-          } finally {
-            uploading.value = false;
-            event.target.value = '';
-          }
-        };
-        
-        const removeImage = (index) => {
-          editingCard.value.images.splice(index, 1);
-        };
-        
-        const uploadFile = async (event) => {
-          const file = event.target.files[0];
-          if (!file) return;
-          
-          uploading.value = true;
-          try {
-            const fileRef = storage.ref().child(`files/${generateId()}_${file.name}`);
-            await fileRef.put(file);
-            const url = await fileRef.getDownloadURL();
-            
-            if (!editingCard.value.files) {
-              editingCard.value.files = [];
-            }
-            editingCard.value.files.push({ name: file.name, url });
-            showToast('檔案已上傳', 'success');
-          } catch (err) {
-            console.error('上傳檔案失敗:', err);
-            showToast('上傳失敗：Spark 方案不支援 Storage', 'error');
-          } finally {
-            uploading.value = false;
-            event.target.value = '';
-          }
-        };
-        
-        const removeFile = (index) => {
-          editingCard.value.files.splice(index, 1);
-        };
-
-        // === 外部連結功能 ===
-        const addExternalLink = () => {
-          if (!newExternalLink.value.url) {
-            showToast('請輸入連結網址', 'error');
-            return;
-          }
-          
-          try {
-            new URL(newExternalLink.value.url);
-          } catch {
-            showToast('請輸入有效的網址', 'error');
-            return;
-          }
-          
-          if (!editingCard.value.externalLinks) {
-            editingCard.value.externalLinks = [];
-          }
-          
-          editingCard.value.externalLinks.push({
-            name: newExternalLink.value.name || newExternalLink.value.url,
-            url: newExternalLink.value.url,
-            addedAt: new Date().toISOString()
+          const colCards = cards.value.filter(c => c.columnId === selectedColumnForNewCard.value.id);
+          const maxOrd = colCards.length > 0 ? Math.max(...colCards.map(c => c.orderIndex||0)) : 0;
+          await db.collection('cards').doc(genId()).set({
+            boardId: currentBoardId.value, columnId: selectedColumnForNewCard.value.id,
+            title: newCardTitle.value.trim(), description: '', labels: [], checklist: [],
+            images: [], files: [], externalLinks: [], orderIndex: maxOrd + 1,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(), createdBy: currentUser.value.email
           });
-          
-          newExternalLink.value = { name: '', url: '' };
-          showAddExternalLink.value = false;
-          showToast('已新增外部連結', 'success');
+          addLog('新增了卡片「' + newCardTitle.value + '」');
+          newCardTitle.value = ''; showNewCardModal.value = false; showToast('卡片已建立','success');
         };
-        
-        const removeExternalLink = (index) => {
-          if (editingCard.value.externalLinks) {
-            editingCard.value.externalLinks.splice(index, 1);
-            showToast('已移除連結', 'success');
-          }
-        };
-
-        // === 匯出備份功能 ===
-        const exportBackup = async () => {
+        const openCardDetail = async (card) => {
+          editingCard.value = JSON.parse(JSON.stringify(card));
+          editingCard.value.externalLinks = editingCard.value.externalLinks || [];
+          editingCard.value.checklist = editingCard.value.checklist || [];
+          editingCard.value.labels = editingCard.value.labels || [];
+          showCardDetail.value = true; showAddLink.value = false;
           try {
-            showToast('正在準備備份資料...', 'info');
-            
-            const backupData = {
-              exportDate: new Date().toISOString(),
-              projectName: 'Kanban-schedule',
-              version: '1.0',
-              data: {
-                boards: boards.value,
-                columns: columns.value,
-                cards: cards.value
-              }
-            };
-            
-            const jsonString = JSON.stringify(backupData, null, 2);
-            const blob = new Blob([jsonString], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `kanban-backup-${new Date().toISOString().slice(0,10)}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            
-            showToast('備份檔案已下載！', 'success');
-          } catch (err) {
-            console.error('匯出備份失敗:', err);
-            showToast('匯出備份失敗', 'error');
-          }
+            const s = await db.collection('comments').where('cardId','==',card.id).orderBy('createdAt','desc').get();
+            cardComments.value = s.docs.map(d => ({ id: d.id, ...d.data() }));
+          } catch(e) { cardComments.value = []; }
+        };
+        const closeCardDetail = () => { showCardDetail.value = false; editingCard.value = {}; showAddLink.value = false; };
+        const saveCard = async () => {
+          const data = { ...editingCard.value }; delete data.id;
+          await db.collection('cards').doc(editingCard.value.id).update(data);
+          showToast('已儲存','success'); closeCardDetail();
+        };
+        const deleteCard = async () => {
+          if (!confirm('確定刪除？')) return;
+          await db.collection('cards').doc(editingCard.value.id).delete();
+          addLog('刪除了卡片'); showToast('已刪除','success'); closeCardDetail();
+        };
+        const toggleLabel = (l) => {
+          if (!editingCard.value.labels) editingCard.value.labels = [];
+          const i = editingCard.value.labels.indexOf(l);
+          if (i === -1) editingCard.value.labels.push(l); else editingCard.value.labels.splice(i, 1);
+        };
+        const addCardLink = () => {
+          if (!newLinkUrl.value) return showToast('請輸入網址','error');
+          editingCard.value.externalLinks.push({ name: newLinkName.value || newLinkUrl.value, url: newLinkUrl.value });
+          newLinkName.value = ''; newLinkUrl.value = ''; showAddLink.value = false;
+        };
+        const addComment = async () => {
+          if (!newComment.value.trim()) return;
+          await db.collection('comments').doc(genId()).set({
+            cardId: editingCard.value.id, content: newComment.value.trim(),
+            author: currentUser.value.displayName || currentUser.value.email,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          newComment.value = '';
+          const s = await db.collection('comments').where('cardId','==',editingCard.value.id).orderBy('createdAt','desc').get();
+          cardComments.value = s.docs.map(d => ({ id: d.id, ...d.data() }));
         };
 
-        // === 匯入備份功能 ===
-        const openImportModal = () => {
-          showImportModal.value = true;
-          importPreview.value = null;
-          importMode.value = 'merge';
+        // ===== 拖拉 =====
+        const onCardDragStart = (e, card) => { draggingCard.value = card; e.target.classList.add('card-dragging'); };
+        const onCardDragEnd = (e) => { draggingCard.value = null; e.target.classList.remove('card-dragging'); };
+        const onCardDrop = async (e, col) => {
+          e.currentTarget.classList.remove('drag-over');
+          if (!draggingCard.value || draggingCard.value.columnId === col.id) return;
+          const colCards = cards.value.filter(c => c.columnId === col.id);
+          const maxOrd = colCards.length > 0 ? Math.max(...colCards.map(c => c.orderIndex||0)) : 0;
+          await db.collection('cards').doc(draggingCard.value.id).update({ columnId: col.id, orderIndex: maxOrd + 1 });
+          showToast('卡片已移動','success');
         };
-        
-        const closeImportModal = () => {
-          showImportModal.value = false;
-          importPreview.value = null;
-          if (importFileInput.value) {
-            importFileInput.value.value = '';
-          }
+        const onCalendarDrop = async (e, dateStr) => {
+          if (!draggingCard.value) return;
+          await db.collection('cards').doc(draggingCard.value.id).update({ dueDate: dateStr });
+          showToast('到期日已更新','success');
         };
-        
-        const handleImportFile = (event) => {
-          const file = event.target.files[0];
-          if (!file) return;
-          
-          if (!file.name.endsWith('.json')) {
-            showToast('請選擇 JSON 檔案', 'error');
-            return;
-          }
-          
+        const prevMonth = () => { const d = new Date(calendarDate.value); d.setMonth(d.getMonth()-1); calendarDate.value = d; };
+        const nextMonth = () => { const d = new Date(calendarDate.value); d.setMonth(d.getMonth()+1); calendarDate.value = d; };
+
+        // ===== 使用者管理 =====
+        const addUser = async () => {
+          const email = newUserEmail.value.trim().toLowerCase();
+          if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showToast('請輸入有效的 Email','error');
+          const existing = await db.collection('authorized_users').doc(email).get();
+          if (existing.exists) return showToast('已在授權名單中','error');
+          await db.collection('authorized_users').doc(email).set({
+            email, role: newUserRole.value, createdAt: firebase.firestore.FieldValue.serverTimestamp(), createdBy: currentUser.value.email
+          });
+          newUserEmail.value = ''; showToast('已新增','success');
+        };
+        const updateUserRole = async (user, r) => { await db.collection('authorized_users').doc(user.email).update({ role: r }); showToast('已更新','success'); };
+        const removeUser = async (user) => { if (confirm(`移除「${user.email}」？`)) { await db.collection('authorized_users').doc(user.email).delete(); showToast('已移除','success'); } };
+
+        // ===== 匯出匯入 =====
+        const exportBackup = () => {
+          const data = { exportDate: new Date().toISOString(), data: { boards: boards.value, columns: columns.value, cards: cards.value } };
+          const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+          const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+          a.download = `backup-${toDateStr(new Date())}.json`; a.click();
+          showToast('備份已下載','success');
+        };
+        const openImportModal = () => { showImportModal.value = true; importPreview.value = null; importMode.value = 'merge'; };
+        const closeImportModal = () => { showImportModal.value = false; importPreview.value = null; };
+        const handleImportFile = (e) => {
+          const file = e.target.files[0]; if (!file) return;
           const reader = new FileReader();
-          reader.onload = (e) => {
+          reader.onload = (ev) => {
             try {
-              const data = JSON.parse(e.target.result);
-              
-              if (!data.data || !data.data.boards) {
-                showToast('備份檔案格式不正確', 'error');
-                return;
-              }
-              
-              importPreview.value = {
-                exportDate: data.exportDate,
-                boardCount: data.data.boards?.length || 0,
-                columnCount: data.data.columns?.length || 0,
-                cardCount: data.data.cards?.length || 0,
-                rawData: data.data
-              };
-              
-            } catch (err) {
-              console.error('解析備份檔案失敗:', err);
-              showToast('無法解析備份檔案', 'error');
-            }
+              const data = JSON.parse(ev.target.result);
+              if (!data.data?.boards) return showToast('格式不正確','error');
+              importPreview.value = { boardCount: data.data.boards?.length||0, columnCount: data.data.columns?.length||0, cardCount: data.data.cards?.length||0, rawData: data.data };
+            } catch(e) { showToast('無法解析檔案','error'); }
           };
           reader.readAsText(file);
         };
-        
         const executeImport = async () => {
-          if (!importPreview.value) {
-            showToast('請先選擇備份檔案', 'error');
-            return;
+          if (!importPreview.value || !confirm(importMode.value === 'merge' ? '確定合併匯入？' : '確定覆蓋匯入？所有資料會被清除！')) return;
+          const batch = db.batch(), data = importPreview.value.rawData;
+          const bMap = {}, cMap = {};
+          if (importMode.value === 'replace') {
+            cards.value.forEach(c => batch.delete(db.collection('cards').doc(c.id)));
+            columns.value.forEach(c => batch.delete(db.collection('columns').doc(c.id)));
+            boards.value.forEach(b => batch.delete(db.collection('boards').doc(b.id)));
           }
-          
-          const confirmMsg = importMode.value === 'merge' 
-            ? '確定要合併匯入嗎？現有資料會保留，備份資料會加入（看板名稱加上「(匯入)」）。'
-            : '確定要覆蓋匯入嗎？現有所有資料會被清除！';
-          
-          if (!confirm(confirmMsg)) return;
-          
-          try {
-            showToast('正在匯入資料...', 'info');
-            
-            const batch = db.batch();
-            const importData = importPreview.value.rawData;
-            
-            if (importMode.value === 'replace') {
-              for (const card of cards.value) {
-                batch.delete(db.collection('cards').doc(card.id));
-              }
-              for (const column of columns.value) {
-                batch.delete(db.collection('columns').doc(column.id));
-              }
-              for (const board of boards.value) {
-                batch.delete(db.collection('boards').doc(board.id));
-              }
-            }
-            
-            const boardIdMap = {};
-            const columnIdMap = {};
-            
-            if (importData.boards) {
-              for (const board of importData.boards) {
-                const newId = importMode.value === 'merge' ? generateId() : board.id;
-                boardIdMap[board.id] = newId;
-                
-                const docRef = db.collection('boards').doc(newId);
-                batch.set(docRef, {
-                  ...board,
-                  id: newId,
-                  name: importMode.value === 'merge' ? board.name + ' (匯入)' : board.name,
-                  importedAt: new Date().toISOString()
-                });
-              }
-            }
-            
-            if (importData.columns) {
-              for (const column of importData.columns) {
-                const newId = importMode.value === 'merge' ? generateId() : column.id;
-                columnIdMap[column.id] = newId;
-                
-                const docRef = db.collection('columns').doc(newId);
-                batch.set(docRef, {
-                  ...column,
-                  id: newId,
-                  boardId: boardIdMap[column.boardId] || column.boardId
-                });
-              }
-            }
-            
-            if (importData.cards) {
-              for (const card of importData.cards) {
-                const newId = importMode.value === 'merge' ? generateId() : card.id;
-                
-                const docRef = db.collection('cards').doc(newId);
-                batch.set(docRef, {
-                  ...card,
-                  id: newId,
-                  boardId: boardIdMap[card.boardId] || card.boardId,
-                  columnId: columnIdMap[card.columnId] || card.columnId
-                });
-              }
-            }
-            
-            await batch.commit();
-            
-            showToast(`匯入完成！共匯入 ${importPreview.value.boardCount} 個看板、${importPreview.value.cardCount} 張卡片`, 'success');
-            closeImportModal();
-            
-          } catch (err) {
-            console.error('匯入失敗:', err);
-            showToast('匯入失敗：' + err.message, 'error');
-          }
+          if (data.boards) data.boards.forEach(b => {
+            const nid = importMode.value === 'merge' ? genId() : b.id; bMap[b.id] = nid;
+            batch.set(db.collection('boards').doc(nid), { ...b, id: nid, name: importMode.value === 'merge' ? b.name + ' (匯入)' : b.name });
+          });
+          if (data.columns) data.columns.forEach(c => {
+            const nid = importMode.value === 'merge' ? genId() : c.id; cMap[c.id] = nid;
+            batch.set(db.collection('columns').doc(nid), { ...c, id: nid, boardId: bMap[c.boardId]||c.boardId });
+          });
+          if (data.cards) data.cards.forEach(c => {
+            const nid = importMode.value === 'merge' ? genId() : c.id;
+            batch.set(db.collection('cards').doc(nid), { ...c, id: nid, boardId: bMap[c.boardId]||c.boardId, columnId: cMap[c.columnId]||c.columnId });
+          });
+          await batch.commit();
+          showToast('匯入完成！','success'); closeImportModal();
         };
 
-        // === 卡片拖拉功能 ===
-        const onCardDragStart = (event, card) => {
-          draggingCard.value = card;
-          event.dataTransfer.effectAllowed = 'move';
-          event.target.classList.add('card-dragging');
+        // ===== 共同編輯 =====
+        const listenDoc = () => {
+          if (unsubscribeDoc) unsubscribeDoc();
+          unsubscribeDoc = db.collection('docs-content').doc(currentDocId.value).onSnapshot(s => {
+            if (s.exists) {
+              const data = s.data();
+              if (data.lastEditBy !== currentUser.value?.uid) {
+                isRemoteDocUpdate = true;
+                docContent.value = data.content || '';
+                isRemoteDocUpdate = false;
+              }
+              docLocked.value = !!data.locked;
+              docSaveStatus.value = `最後由 ${data.lastEditName || '未知'} 編輯`;
+            }
+          });
         };
-        
-        const onCardDragEnd = (event) => {
-          draggingCard.value = null;
-          event.target.classList.remove('card-dragging');
-        };
-        
-        const onCardDragOver = (event, column) => {
-          event.preventDefault();
-          event.currentTarget.classList.add('drag-over');
-        };
-        
-        const onCardDrop = async (event, column) => {
-          event.currentTarget.classList.remove('drag-over');
-          
-          if (!draggingCard.value) return;
-          if (draggingCard.value.columnId === column.id) return;
-          
-          try {
-            const columnCards = cards.value.filter(c => c.columnId === column.id);
-            const maxOrder = columnCards.length > 0 
-              ? Math.max(...columnCards.map(c => c.orderIndex || 0)) 
-              : 0;
-            
-            await db.collection('cards').doc(draggingCard.value.id).update({
-              columnId: column.id,
-              orderIndex: maxOrder + 1
+
+        const switchDoc = (id) => { currentDocId.value = id; listenDoc(); };
+
+        const onDocInput = () => {
+          if (isRemoteDocUpdate) return;
+          docSaveStatus.value = '儲存中...';
+          clearTimeout(docSaveTimer);
+          docSaveTimer = setTimeout(async () => {
+            await db.collection('docs-content').doc(currentDocId.value).set({
+              content: docContent.value, lastEditBy: currentUser.value.uid,
+              lastEditName: currentUser.value.displayName, time: firebase.firestore.FieldValue.serverTimestamp(), locked: false
             });
-            
-            showToast('卡片已移動', 'success');
-          } catch (err) {
-            console.error('移動卡片失敗:', err);
-            showToast('移動卡片失敗', 'error');
-          }
-        };
-
-        // === 日曆功能 ===
-        const prevMonth = () => {
-          const d = new Date(calendarDate.value);
-          d.setMonth(d.getMonth() - 1);
-          calendarDate.value = d;
-        };
-        
-        const nextMonth = () => {
-          const d = new Date(calendarDate.value);
-          d.setMonth(d.getMonth() + 1);
-          calendarDate.value = d;
-        };
-        
-        const onCalendarDrop = async (event, dateStr) => {
-          if (!draggingCard.value) return;
-          
-          try {
-            await db.collection('cards').doc(draggingCard.value.id).update({
-              dueDate: dateStr
+            await db.collection('doc-versions').add({
+              docId: currentDocId.value, content: docContent.value, editBy: currentUser.value.displayName,
+              time: firebase.firestore.FieldValue.serverTimestamp()
             });
-            showToast('到期日已更新', 'success');
-          } catch (err) {
-            console.error('更新到期日失敗:', err);
-            showToast('更新到期日失敗', 'error');
-          }
+            docSaveStatus.value = '已儲存 ✓';
+          }, 1500);
         };
 
-        // === 生命週期 ===
-        onMounted(() => {
-          initialize();
-        });
-        
+        const createDoc = async () => {
+          const title = prompt('請輸入文件名稱：'); if (!title) return;
+          const ref = await db.collection('documents').add({ title, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+          currentDocId.value = ref.id; listenDoc();
+          addLog('建立了文件「' + title + '」');
+        };
+
+        const createMeetingDoc = async () => {
+          const dateStr = new Date().toLocaleDateString('zh-TW');
+          const title = `會議記錄 ${dateStr}`;
+          const template = `📝 會議記錄\n日期：${dateStr}\n出席者：\n\n📌 討論事項：\n1. \n2. \n3. \n\n✅ 決議事項：\n1. \n2. \n\n📋 待辦追蹤：\n- \n- \n\n📝 備註：\n`;
+          const ref = await db.collection('documents').add({ title, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+          await db.collection('docs-content').doc(ref.id).set({
+            content: template, lastEditBy: currentUser.value.uid, lastEditName: currentUser.value.displayName,
+            time: firebase.firestore.FieldValue.serverTimestamp(), locked: false
+          });
+          currentDocId.value = ref.id; listenDoc();
+          addLog('建立了會議記錄');
+        };
+
+        const removeDoc = async (id) => {
+          if (!confirm('確定刪除此文件？')) return;
+          await db.collection('documents').doc(id).delete();
+          await db.collection('docs-content').doc(id).delete().catch(()=>{});
+          if (currentDocId.value === id) { currentDocId.value = 'main'; listenDoc(); }
+          addLog('刪除了一份文件');
+        };
+
+        const exportDoc = () => {
+          const d = docList.value.find(d => d.id === currentDocId.value);
+          const blob = new Blob([docContent.value], { type: 'text/plain;charset=utf-8' });
+          const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+          a.download = (d?.title || '文件') + '.txt'; a.click();
+        };
+
+        const toggleDocLock = async () => {
+          const snap = await db.collection('docs-content').doc(currentDocId.value).get();
+          const locked = snap.exists ? !snap.data().locked : true;
+          await db.collection('docs-content').doc(currentDocId.value).update({ locked });
+          addLog(locked ? '鎖定了文件' : '解鎖了文件');
+        };
+
+        const showDocVersions = async () => {
+          const s = await db.collection('doc-versions').where('docId','==',currentDocId.value).orderBy('time','desc').limit(20).get();
+          docVersions.value = s.docs.map(d => ({ id: d.id, ...d.data() }));
+          showVersionModal.value = true;
+        };
+
+        const restoreVersion = async (v) => {
+          if (!confirm('確定還原此版本？')) return;
+          await db.collection('docs-content').doc(currentDocId.value).set({
+            content: v.content, lastEditBy: currentUser.value.uid, lastEditName: currentUser.value.displayName,
+            time: firebase.firestore.FieldValue.serverTimestamp(), locked: false
+          });
+          docContent.value = v.content; showVersionModal.value = false;
+          addLog('還原了文件版本'); showToast('已還原','success');
+        };
+
+        // ===== 聊天 =====
+        const sendChat = async () => {
+          if (!chatInput.value.trim()) return;
+          await db.collection('chat').add({
+            name: currentUser.value.displayName, photo: currentUser.value.photoURL,
+            uid: currentUser.value.uid, text: chatInput.value.trim(),
+            readBy: [currentUser.value.uid], time: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          chatInput.value = '';
+        };
+
+        // ===== 公告分享 =====
+        const addNote = async () => {
+          if (!newNoteTitle.value.trim() || !newNoteContent.value.trim()) return showToast('請填寫標題和內容','error');
+          await db.collection('notes').add({
+            title: newNoteTitle.value.trim(), content: newNoteContent.value.trim(), pinned: newNotePinned.value,
+            author: currentUser.value.displayName, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+          addLog('分享了「' + newNoteTitle.value + '」');
+          newNoteTitle.value = ''; newNoteContent.value = ''; newNotePinned.value = false;
+        };
+        const toggleNotePin = async (note) => { await db.collection('notes').doc(note.id).update({ pinned: !note.pinned }); };
+        const deleteNote = async (id) => { if (confirm('確定刪除？')) { await db.collection('notes').doc(id).delete(); addLog('刪除了一則分享'); } };
+
+        // ===== 個人待辦 =====
+        const addTodo = async () => {
+          if (!newTodoText.value.trim()) return;
+          await db.collection('todos').add({ text: newTodoText.value.trim(), done: false, uid: currentUser.value.uid, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+          newTodoText.value = '';
+        };
+        const toggleTodo = async (todo) => { await db.collection('todos').doc(todo.id).update({ done: !todo.done }); };
+        const deleteTodo = async (id) => { await db.collection('todos').doc(id).delete(); };
+
+        // ===== 活動紀錄 =====
+        const addLog = async (action) => {
+          await db.collection('logs').add({ user: currentUser.value.displayName, action, time: firebase.firestore.FieldValue.serverTimestamp() });
+        };
+
+        // ===== 生命週期 =====
+        onMounted(() => { initialize(); });
         onUnmounted(() => {
-          if (unsubscribeBoards) unsubscribeBoards();
-          if (unsubscribeColumns) unsubscribeColumns();
-          if (unsubscribeCards) unsubscribeCards();
-          if (unsubscribeAllCards) unsubscribeAllCards();
-          if (unsubscribeAllCardsListener) unsubscribeAllCardsListener();
-          if (unsubscribeUsers) unsubscribeUsers();
+          [unsubBoards, unsubColumns, unsubCards, unsubUsers, unsubDocs, unsubChat, unsubNotes, unsubTodos, unsubLogs, unsubOnline, unsubscribeDoc, unsubAllCards].forEach(u => { if (u) u(); });
         });
 
-        // === 回傳 ===
         return {
-          loading,
-          error,
-          showRetryLogin,
-          currentUser,
-          isAuthorized,
-          role,
-          authorizedUsers,
-          showUserManagement,
-          newUserEmail,
-          newUserRole,
-          signInWithGoogle,
-          signOut,
-          addUser,
-          updateUserRole,
-          removeUser,
-          boards,
-          columns,
-          cards,
-          cardComments,
-          currentBoardId,
-          currentView,
-          toast,
-          showNewBoardModal,
-          showNewColumnModal,
-          showNewCardModal,
-          showCardDetail,
-          showColumnMenu,
-          showEditColumnModal,
-          showArchiveConfirm,
-          showImportModal,
-          editingCard,
-          editingColumn,
-          selectedColumn,
-          archivingColumn,
-          newBoardName,
-          newColumnName,
-          newColumnColor,
-          newCardTitle,
-          newComment,
-          uploading,
-          showAddExternalLink,
-          newExternalLink,
-          importMode,
-          importFileInput,
-          importPreview,
-          draggingCard,
-          calendarDate,
-          ganttFilterAssignee,
-          showAllBoards,
-          showToolMenu,
-          columnColors,
-          labelNames,
-          sortedColumns,
-          calendarTitle,
-          calendarDays,
-          ganttDates,
-          allAssignees,
-          filteredGanttCards,
-          formatDate,
-          formatDateTime,
-          getDueDateClass,
-          getLabelBgClass,
-          isToday,
-          getGanttBarStyle,
-          createBoard,
-          deleteBoard,
-          createColumn,
-          openColumnMenu,
-          openEditColumnModal,
-          saveColumn,
-          confirmArchiveColumn,
-          archiveColumn,
-          openNewCardModal,
-          createCard,
-          openCardDetail,
-          closeCardDetail,
-          saveCard,
-          deleteCard,
-          toggleLabel,
-          addComment,
-          uploadImage,
-          removeImage,
-          uploadFile,
-          removeFile,
-          addExternalLink,
-          removeExternalLink,
-          exportBackup,
-          openImportModal,
-          closeImportModal,
-          handleImportFile,
-          executeImport,
-          onCardDragStart,
-          onCardDragEnd,
-          onCardDragOver,
-          onCardDrop,
-          prevMonth,
-          nextMonth,
-          onCalendarDrop
+          loading, error, showRetryLogin, currentUser, isAuthorized, role, authorizedUsers,
+          showUserManagement, newUserEmail, newUserRole, signInWithGoogle, signOut,
+          addUser, updateUserRole, removeUser,
+          boards, columns, cards, cardComments, currentBoardId, currentView,
+          showAllBoards, allBoardsCards,
+          showNewBoardModal, showNewColumnModal, showNewCardModal, showCardDetail,
+          showColumnMenu, showEditColumnModal, showArchiveConfirm, showImportModal,
+          showToolMenu, showThemeSettings, showVersionModal,
+          editingCard, editingColumn, selectedColumn, archivingColumn,
+          newBoardName, newColumnName, newColumnColor, newCardTitle, newComment,
+          draggingCard, calendarDate, ganttFilterAssignee,
+          showAddLink, newLinkName, newLinkUrl,
+          importMode, importFileInput, importPreview, uploading, toast,
+          darkMode, themeColor, views, themeColors,
+          docList, currentDocId, docContent, docLocked, docSaveStatus, docVersions,
+          chatMessages, chatInput,
+          allNotes, newNoteTitle, newNoteContent, newNotePinned, noteSearch,
+          myTodos, newTodoText, activityLogs, onlineUsers,
+          columnColors, labelNames,
+          sortedColumns, displayCards, calendarTitle, calendarDays, ganttDates,
+          allAssignees, filteredGanttCards, filteredNotes,
+          formatDate, formatDateTime, formatMsgTime, formatLogTime, formatNoteTime,
+          getDueDateClass, getLabelBgClass, isToday, getGanttBarStyle, linkifyText,
+          toggleDarkMode, setThemeColor,
+          createBoard, deleteBoard, createColumn, openColumnMenu, openEditColumnModal,
+          saveColumn, confirmArchiveColumn, archiveColumn,
+          openNewCardModal, createCard, openCardDetail, closeCardDetail, saveCard, deleteCard,
+          toggleLabel, addCardLink, addComment,
+          onCardDragStart, onCardDragEnd, onCardDrop, onCalendarDrop, prevMonth, nextMonth,
+          exportBackup, openImportModal, closeImportModal, handleImportFile, executeImport,
+          switchDoc, onDocInput, createDoc, createMeetingDoc, removeDoc, exportDoc,
+          toggleDocLock, showDocVersions, restoreVersion,
+          sendChat, addNote, toggleNotePin, deleteNote,
+          addTodo, toggleTodo, deleteTodo,
+          showToast
         };
       }
     }).mount('#app');
   </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
