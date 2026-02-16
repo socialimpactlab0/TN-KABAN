@@ -36,6 +36,9 @@
     .fade-enter-from, .fade-leave-to { opacity: 0; }
     .img-preview { transition: transform 0.2s; }
     .img-preview:hover { transform: scale(1.05); }
+    .drop-zone { transition: all 0.2s; }
+    .drop-zone.drag-active { border-color: #6366f1; background-color: #eef2ff; }
+    .dark .drop-zone.drag-active { border-color: #818cf8; background-color: rgba(99,102,241,0.1); }
   </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 min-h-screen transition-colors duration-300">
@@ -108,8 +111,6 @@
                 class="px-3 py-1.5 text-sm bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 whitespace-nowrap">+ 新增</button>
             </div>
           </div>
-
-          <!-- 視圖切換 -->
           <div class="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1 overflow-x-auto">
             <button v-for="v in views" :key="v.id" @click="currentView = v.id"
               :class="currentView === v.id ? 'bg-white dark:bg-gray-600 shadow-sm' : ''"
@@ -117,8 +118,6 @@
               {{ v.icon }} {{ v.name }}
             </button>
           </div>
-
-          <!-- 右側工具 -->
           <div class="flex items-center space-x-3">
             <button @click="toggleDarkMode" class="px-2 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">
               {{ darkMode ? '☀️' : '🌙' }}
@@ -239,8 +238,8 @@
                   <div v-for="card in day.cards" :key="card.id + card._label" draggable="true"
                     @dragstart="onCardDragStart($event, card)" @click="openCardDetail(card)"
                     class="text-xs p-1 rounded truncate cursor-pointer hover:opacity-80"
-                    :class="card._label === '開始' ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' : 
-                    'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300'">{{ card._label === '開始' ? '▶' : '■' }} {{ card.title }}</div>
+                    :class="card._label === '開始' ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300'">
+                    {{ card._label === '開始' ? '▶' : '■' }} {{ card.title }}</div>
                 </div>
               </div>
             </div>
@@ -345,39 +344,183 @@
           </div>
         </div>
 
-        <!-- ===== 公告 / 分享視圖 ===== -->
+        <!-- ===== 公告 / 分享視圖（大幅升級：支援圖片、檔案、Google Drive）===== -->
         <div v-if="currentView === 'share'" class="h-full p-4 overflow-auto">
           <div class="max-w-3xl mx-auto">
+            <!-- 搜尋 -->
             <div class="relative mb-4">
               <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
               <input v-model="noteSearch" type="text" placeholder="搜尋公告、筆記..."
                 class="w-full pl-10 pr-4 py-2 border dark:border-gray-600 rounded-xl text-sm bg-white dark:bg-gray-800 dark:text-gray-200 outline-none focus:border-indigo-500">
             </div>
+
+            <!-- 新增分享（升級版）-->
             <div class="bg-white dark:bg-gray-800 rounded-xl p-4 mb-4 shadow-sm">
               <h3 class="font-medium text-gray-700 dark:text-gray-200 mb-3">📎 分享資料 / 連結 / 公告</h3>
               <input v-model="newNoteTitle" type="text" placeholder="標題"
                 class="w-full px-3 py-2 border dark:border-gray-600 rounded-lg text-sm mb-2 bg-white dark:bg-gray-700 dark:text-gray-200 outline-none focus:border-indigo-500">
               <textarea v-model="newNoteContent" placeholder="內容或連結..." rows="2"
-                class="w-full px-3 py-2 border dark:border-gray-600 rounded-lg text-sm mb-2 bg-white dark:bg-gray-700 dark:text-gray-200 outline-none focus:border-indigo-500 resize-none"></textarea>
+                class="w-full px-3 py-2 border dark:border-gray-600 rounded-lg text-sm mb-3 bg-white dark:bg-gray-700 dark:text-gray-200 outline-none focus:border-indigo-500 resize-none"></textarea>
+
+              <!-- 拖曳上傳區 -->
+              <div class="drop-zone border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 mb-3 text-center transition-colors"
+                :class="{ 'drag-active': noteDragActive }"
+                @dragover.prevent="noteDragActive = true"
+                @dragleave.prevent="noteDragActive = false"
+                @drop.prevent="onNoteFileDrop($event)">
+                <div v-if="noteUploading" class="flex items-center justify-center gap-2 text-indigo-500">
+                  <span class="animate-spin text-xl">⏳</span>
+                  <span class="text-sm">上傳中... {{ noteUploadProgress }}</span>
+                </div>
+                <div v-else>
+                  <p class="text-gray-400 text-sm mb-2">拖曳檔案到這裡，或點擊下方按鈕</p>
+                  <div class="flex items-center justify-center gap-2 flex-wrap">
+                    <label class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg text-sm cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors border border-blue-200 dark:border-blue-800">
+                      <span>🖼️ 上傳圖片</span>
+                      <input type="file" accept="image/*" multiple @change="onNoteImageUpload($event)" class="hidden">
+                    </label>
+                    <label class="inline-flex items-center gap-1 px-3 py-1.5 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg text-sm cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/50 transition-colors border border-green-200 dark:border-green-800">
+                      <span>📄 上傳檔案</span>
+                      <input type="file" multiple @change="onNoteFileUpload($event)" class="hidden">
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 已上傳的圖片預覽 -->
+              <div v-if="newNoteImages.length > 0" class="mb-3">
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">🖼️ 已上傳圖片 ({{ newNoteImages.length }})</p>
+                <div class="flex flex-wrap gap-2">
+                  <div v-for="(img, i) in newNoteImages" :key="i" class="relative group">
+                    <img :src="img" class="w-20 h-20 object-cover rounded-lg border dark:border-gray-600 img-preview cursor-pointer"
+                      @click="previewImage = img">
+                    <button @click="newNoteImages.splice(i, 1)"
+                      class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">✕</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 已上傳的檔案列表 -->
+              <div v-if="newNoteFiles.length > 0" class="mb-3">
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">📄 已上傳檔案 ({{ newNoteFiles.length }})</p>
+                <div class="space-y-1">
+                  <div v-for="(file, i) in newNoteFiles" :key="i"
+                    class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-lg group text-sm">
+                    <div class="flex items-center gap-2 truncate flex-1 mr-2">
+                      <span>{{ getFileIcon(file.name) }}</span>
+                      <span class="truncate text-gray-700 dark:text-gray-300">{{ file.name }}</span>
+                    </div>
+                    <button @click="newNoteFiles.splice(i, 1)"
+                      class="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">✕</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Google Drive 連結 -->
+              <div class="mb-3">
+                <button @click="showNoteGdriveInput = !showNoteGdriveInput"
+                  class="text-sm text-gray-500 dark:text-gray-400 hover:text-indigo-500 flex items-center gap-1">
+                  <svg class="w-4 h-4" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+                    <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                    <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-20.4 35.3c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" fill="#00ac47"/>
+                    <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.5l5.4 13.8z" fill="#ea4335"/>
+                    <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                    <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+                    <path d="m73.4 26.5-10.1-17.5c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 23.8h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+                  </svg>
+                  <span>新增 Google Drive 連結</span>
+                </button>
+                <div v-if="showNoteGdriveInput" class="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <input v-model="newNoteGdriveName" type="text" placeholder="連結名稱（選填）"
+                    class="w-full px-3 py-2 border rounded-lg text-sm mb-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 outline-none">
+                  <input v-model="newNoteGdriveUrl" type="url" placeholder="Google Drive 連結網址"
+                    class="w-full px-3 py-2 border rounded-lg text-sm mb-2 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-200 outline-none">
+                  <div class="flex gap-2">
+                    <button @click="addNoteGdriveLink" class="px-3 py-1.5 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600">加入</button>
+                    <button @click="showNoteGdriveInput = false" class="px-3 py-1.5 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 text-sm rounded-lg">取消</button>
+                  </div>
+                </div>
+                <!-- 已加入的 Drive 連結 -->
+                <div v-if="newNoteGdriveLinks.length > 0" class="mt-2 space-y-1">
+                  <div v-for="(link, i) in newNoteGdriveLinks" :key="i"
+                    class="flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg group text-sm">
+                    <div class="flex items-center gap-2 truncate flex-1 mr-2">
+                      <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+                        <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                        <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-20.4 35.3c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" fill="#00ac47"/>
+                        <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.5l5.4 13.8z" fill="#ea4335"/>
+                        <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                        <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+                        <path d="m73.4 26.5-10.1-17.5c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 23.8h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+                      </svg>
+                      <span class="truncate text-blue-600 dark:text-blue-400">{{ link.name || link.url }}</span>
+                    </div>
+                    <button @click="newNoteGdriveLinks.splice(i, 1)"
+                      class="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">✕</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 底部操作 -->
               <div class="flex items-center justify-between">
                 <label class="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-400 cursor-pointer">
                   <input type="checkbox" v-model="newNotePinned" class="rounded"> 📌 置頂
                 </label>
-                <button @click="addNote" class="px-4 py-2 bg-indigo-500 text-white rounded-lg text-sm hover:bg-indigo-600">分享</button>
+                <button @click="addNote" :disabled="noteUploading"
+                  class="px-5 py-2 bg-indigo-500 text-white rounded-lg text-sm hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                  分享
+                </button>
               </div>
             </div>
+
+            <!-- 分享列表 -->
             <div v-for="note in filteredNotes" :key="note.id"
               class="bg-white dark:bg-gray-800 rounded-xl p-4 mb-3 shadow-sm"
               :class="{ 'border-l-4 border-yellow-400': note.pinned }">
-              <div class="flex items-start justify-between">
-                <div>
-                  <h4 class="font-medium text-gray-800 dark:text-gray-200">
-                    {{ note.title }}
-                    <span v-if="note.pinned" class="ml-1 text-xs bg-yellow-400 text-white px-1.5 py-0.5 rounded">📌 置頂</span>
-                  </h4>
-                  <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 whitespace-pre-wrap" v-html="linkifyText(note.content)"></p>
+              <div>
+                <h4 class="font-medium text-gray-800 dark:text-gray-200">
+                  {{ note.title }}
+                  <span v-if="note.pinned" class="ml-1 text-xs bg-yellow-400 text-white px-1.5 py-0.5 rounded">📌 置頂</span>
+                </h4>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mt-1 whitespace-pre-wrap" v-html="linkifyText(note.content)"></p>
+              </div>
+
+              <!-- 顯示圖片 -->
+              <div v-if="note.images && note.images.length > 0" class="mt-3">
+                <div class="flex flex-wrap gap-2">
+                  <img v-for="(img, i) in note.images" :key="i" :src="img"
+                    class="w-28 h-28 object-cover rounded-lg border dark:border-gray-600 cursor-pointer img-preview hover:shadow-md"
+                    @click="previewImage = img">
                 </div>
               </div>
+
+              <!-- 顯示檔案 -->
+              <div v-if="note.files && note.files.length > 0" class="mt-3 space-y-1">
+                <a v-for="(file, i) in note.files" :key="i" :href="file.url" target="_blank" rel="noopener noreferrer"
+                  class="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors text-sm">
+                  <span>{{ getFileIcon(file.name) }}</span>
+                  <span class="text-blue-600 dark:text-blue-400 hover:underline truncate">{{ file.name }}</span>
+                  <span class="text-gray-400 text-xs ml-auto flex-shrink-0">下載 ↓</span>
+                </a>
+              </div>
+
+              <!-- 顯示 Google Drive 連結 -->
+              <div v-if="note.gdriveLinks && note.gdriveLinks.length > 0" class="mt-3 space-y-1">
+                <a v-for="(link, i) in note.gdriveLinks" :key="i" :href="link.url" target="_blank" rel="noopener noreferrer"
+                  class="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors text-sm">
+                  <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 87.3 78" xmlns="http://www.w3.org/2000/svg">
+                    <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                    <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-20.4 35.3c-.8 1.4-1.2 2.95-1.2 4.5h27.5z" fill="#00ac47"/>
+                    <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.5l5.4 13.8z" fill="#ea4335"/>
+                    <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                    <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+                    <path d="m73.4 26.5-10.1-17.5c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 23.8h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+                  </svg>
+                  <span class="text-blue-600 dark:text-blue-400 hover:underline truncate">{{ link.name || 'Google Drive 文件' }}</span>
+                  <span class="text-gray-400 text-xs ml-auto flex-shrink-0">開啟 →</span>
+                </a>
+              </div>
+
               <div class="flex items-center justify-between mt-3 text-xs text-gray-400">
                 <span>{{ note.author }} · {{ formatNoteTime(note.createdAt) }}</span>
                 <div class="flex gap-2">
@@ -529,7 +672,7 @@
       </div>
     </div>
 
-    <!-- ===== 卡片詳情（已修正：加入圖片和檔案上傳 UI）===== -->
+    <!-- 卡片詳情 -->
     <div v-if="showCardDetail" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <div class="p-4 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex items-center justify-between">
@@ -539,56 +682,46 @@
         </div>
         <div class="flex-1 overflow-y-auto">
           <div class="flex flex-col md:flex-row">
-            <!-- 左側 -->
             <div class="flex-1 p-4 space-y-4">
-              <!-- 描述 -->
               <div>
                 <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">📝 描述</h4>
                 <textarea v-model="editingCard.description" rows="3"
                   class="w-full px-3 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-200 outline-none resize-none focus:ring-2 focus:ring-indigo-500"
                   placeholder="新增描述..."></textarea>
               </div>
-
-              <!-- 🖼️ 圖片上傳（新增）-->
               <div>
                 <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">🖼️ 圖片</h4>
                 <div v-if="editingCard.images && editingCard.images.length > 0" class="flex flex-wrap gap-2 mb-3">
                   <div v-for="(img, i) in editingCard.images" :key="i" class="relative group">
                     <img :src="img" class="w-24 h-24 object-cover rounded-lg border dark:border-gray-600 cursor-pointer img-preview"
-                      @click="openImagePreview(img)" alt="附件圖片">
-                    <button @click="removeImage(i)"
+                      @click="previewImage = img">
+                    <button @click="removeCardImage(i)"
                       class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">✕</button>
                   </div>
                 </div>
-                <div v-else class="text-sm text-gray-400 mb-2">尚未上傳圖片</div>
                 <label class="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg text-sm cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
                   <span v-if="!uploading">📷 上傳圖片</span>
                   <span v-else class="flex items-center gap-1"><span class="animate-spin">⏳</span> 上傳中...</span>
-                  <input type="file" accept="image/*" @change="uploadImage" class="hidden" :disabled="uploading">
+                  <input type="file" accept="image/*" @change="uploadCardImage" class="hidden" :disabled="uploading">
                 </label>
               </div>
-
-              <!-- 📎 檔案上傳（新增）-->
               <div>
                 <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">📎 附件</h4>
                 <div v-if="editingCard.files && editingCard.files.length > 0" class="space-y-1 mb-3">
                   <div v-for="(file, i) in editingCard.files" :key="i"
                     class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-lg group">
                     <a :href="file.url" target="_blank" rel="noopener noreferrer"
-                      class="text-blue-600 hover:underline truncate flex-1 mr-2 text-sm">📄 {{ file.name }}</a>
-                    <button @click="removeFile(i)"
+                      class="text-blue-600 hover:underline truncate flex-1 mr-2 text-sm">{{ getFileIcon(file.name) }} {{ file.name }}</a>
+                    <button @click="removeCardFile(i)"
                       class="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity text-sm">✕</button>
                   </div>
                 </div>
-                <div v-else class="text-sm text-gray-400 mb-2">尚未上傳附件</div>
                 <label class="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg text-sm cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
                   <span v-if="!uploading">📎 上傳檔案</span>
                   <span v-else class="flex items-center gap-1"><span class="animate-spin">⏳</span> 上傳中...</span>
-                  <input type="file" @change="uploadFile" class="hidden" :disabled="uploading">
+                  <input type="file" @change="uploadCardFile" class="hidden" :disabled="uploading">
                 </label>
               </div>
-
-              <!-- 外部連結 -->
               <div>
                 <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">🔗 外部連結</h4>
                 <div v-for="(link, i) in editingCard.externalLinks" :key="i"
@@ -609,12 +742,10 @@
                 </div>
                 <button v-else @click="showAddLink = true" class="text-sm text-blue-600 hover:text-blue-800 mt-1">+ 新增外部連結</button>
               </div>
-
-              <!-- 檢查清單 -->
               <div>
                 <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">✅ 檢查清單</h4>
                 <div v-if="editingCard.checklist && editingCard.checklist.length > 0" class="mb-2">
-                  <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2 mb-2">
+                  <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2 mb-1">
                     <div class="bg-green-500 h-2 rounded-full transition-all" :style="{ width: checklistProgress + '%' }"></div>
                   </div>
                   <span class="text-xs text-gray-500">{{ checklistProgress }}% 完成</span>
@@ -629,8 +760,6 @@
                 <button @click="editingCard.checklist = editingCard.checklist || []; editingCard.checklist.push({ text: '', done: false })"
                   class="mt-1 text-sm text-indigo-600 hover:text-indigo-800">+ 新增項目</button>
               </div>
-
-              <!-- 留言 -->
               <div>
                 <h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">💬 留言</h4>
                 <div class="flex space-x-2 mb-3">
@@ -648,8 +777,6 @@
                 </div>
               </div>
             </div>
-
-            <!-- 右側 -->
             <div class="w-full md:w-64 p-4 bg-gray-50 dark:bg-gray-900 border-t md:border-t-0 md:border-l dark:border-gray-700 space-y-4">
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">狀態</label>
@@ -691,7 +818,7 @@
       </div>
     </div>
 
-    <!-- 圖片預覽 Lightbox（新增）-->
+    <!-- 圖片預覽 Lightbox -->
     <div v-if="previewImage" class="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] p-4 cursor-pointer" @click="previewImage = null">
       <div class="relative max-w-4xl max-h-[90vh]">
         <img :src="previewImage" class="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl" @click.stop>
@@ -875,7 +1002,6 @@
         const newUserEmail = ref('');
         const newUserRole = ref('member');
 
-        // ===== 看板狀態 =====
         const boards = ref([]);
         const columns = ref([]);
         const cards = ref([]);
@@ -885,7 +1011,6 @@
         const showAllBoards = ref(false);
         const allBoardsCards = ref([]);
 
-        // ===== 彈窗狀態 =====
         const showNewBoardModal = ref(false);
         const showNewColumnModal = ref(false);
         const showNewCardModal = ref(false);
@@ -898,7 +1023,6 @@
         const showThemeSettings = ref(false);
         const showVersionModal = ref(false);
 
-        // ===== 編輯狀態 =====
         const editingCard = ref({});
         const editingColumn = ref({});
         const selectedColumn = ref(null);
@@ -920,13 +1044,11 @@
         const importPreview = ref(null);
         const uploading = ref(false);
         const toast = ref({ show: false, message: '', type: 'info' });
-        const previewImage = ref(null); // 圖片預覽（新增）
+        const previewImage = ref(null);
 
-        // ===== 深色模式 =====
         const darkMode = ref(localStorage.getItem('darkMode') === 'true');
         const themeColor = ref(localStorage.getItem('themeColor') || 'indigo');
 
-        // ===== 共同編輯 =====
         const docList = ref([]);
         const currentDocId = ref('main');
         const docContent = ref('');
@@ -936,27 +1058,30 @@
         let docSaveTimer = null;
         let isRemoteDocUpdate = false;
         let unsubscribeDoc = null;
-        let lastVersionTime = 0; // 版本節流（修正：降低版本儲存頻率）
+        let lastVersionTime = 0;
 
-        // ===== 聊天 =====
         const chatMessages = ref([]);
         const chatInput = ref('');
 
-        // ===== 公告分享 =====
+        // ===== 分享功能狀態（大幅升級）=====
         const allNotes = ref([]);
         const newNoteTitle = ref('');
         const newNoteContent = ref('');
         const newNotePinned = ref(false);
         const noteSearch = ref('');
+        const newNoteImages = ref([]);       // 暫存上傳的圖片 URL
+        const newNoteFiles = ref([]);        // 暫存上傳的檔案 { name, url }
+        const newNoteGdriveLinks = ref([]);  // Google Drive 連結 { name, url }
+        const showNoteGdriveInput = ref(false);
+        const newNoteGdriveName = ref('');
+        const newNoteGdriveUrl = ref('');
+        const noteUploading = ref(false);
+        const noteUploadProgress = ref('');
+        const noteDragActive = ref(false);
 
-        // ===== 個人待辦 =====
         const myTodos = ref([]);
         const newTodoText = ref('');
-
-        // ===== 活動紀錄 =====
         const activityLogs = ref([]);
-
-        // ===== 在線用戶 =====
         const onlineUsers = ref([]);
 
         // ===== 常數 =====
@@ -981,7 +1106,6 @@
           { name: 'slate', label: '灰藍', primary: '#455a64' },
         ];
 
-        // ===== 監聽器 =====
         let unsubBoards = null, unsubColumns = null, unsubCards = null, unsubUsers = null;
         let unsubAllCards = null, unsubDocs = null, unsubChat = null, unsubNotes = null;
         let unsubTodos = null, unsubLogs = null, unsubOnline = null;
@@ -996,19 +1120,15 @@
         // ===== 計算屬性 =====
         const sortedColumns = computed(() => [...columns.value].sort((a, b) => a.orderIndex - b.orderIndex));
         const displayCards = computed(() => showAllBoards.value ? allBoardsCards.value : cards.value);
-
-        // 檢查清單進度（新增）
         const checklistProgress = computed(() => {
           const cl = editingCard.value.checklist;
           if (!cl || cl.length === 0) return 0;
           return Math.round((cl.filter(i => i.done).length / cl.length) * 100);
         });
-
         const calendarTitle = computed(() => {
           const y = calendarDate.value.getFullYear(), m = calendarDate.value.getMonth() + 1;
           return `${y} 年 ${m} 月`;
         });
-
         const calendarDays = computed(() => {
           const y = calendarDate.value.getFullYear(), m = calendarDate.value.getMonth();
           const first = new Date(y, m, 1), last = new Date(y, m + 1, 0);
@@ -1034,7 +1154,6 @@
           }
           return days;
         });
-
         const ganttDates = computed(() => {
           const cardsWithDates = displayCards.value.filter(c => c.startDate || c.dueDate);
           let minDate = new Date(), maxDate = new Date();
@@ -1051,19 +1170,16 @@
           while (current <= maxDate) { dates.push(toDateStr(current)); current.setDate(current.getDate() + 1); }
           return dates;
         });
-
         const allAssignees = computed(() => {
           const s = new Set();
           cards.value.forEach(c => { if (c.assignee) s.add(c.assignee); });
           return Array.from(s);
         });
-
         const filteredGanttCards = computed(() => {
           let f = displayCards.value.filter(c => c.dueDate || c.startDate);
           if (ganttFilterAssignee.value) f = f.filter(c => c.assignee === ganttFilterAssignee.value);
           return f;
         });
-
         const filteredNotes = computed(() => {
           let notes = [...allNotes.value];
           if (noteSearch.value) {
@@ -1080,7 +1196,6 @@
           toast.value = { show: true, message: msg, type };
           setTimeout(() => toast.value.show = false, 3000);
         };
-        // 修正：使用 Firestore 原生 ID 產生器
         const genId = () => db.collection('_').doc().id;
         const formatDate = (s) => { if (!s) return ''; const d = new Date(s); return `${d.getMonth()+1}/${d.getDate()}`; };
         const formatDateTime = (ts) => { if (!ts) return ''; const d = ts.toDate ? ts.toDate() : new Date(ts); return d.toLocaleString('zh-TW'); };
@@ -1090,20 +1205,39 @@
         const getDueDateClass = (s) => { if (!s) return ''; const diff = (new Date(s) - new Date()) / 864e5; if (diff < 0) return 'text-red-600 font-medium'; if (diff <= 2) return 'text-orange-500'; return 'text-gray-500'; };
         const getLabelBgClass = (l) => ({ urgent:'bg-red-500', important:'bg-yellow-500', normal:'bg-green-500', feature:'bg-blue-500', bug:'bg-purple-500' }[l] || 'bg-gray-500');
         const isToday = (s) => s === toDateStr(new Date());
-
-        // 修正：XSS 防護加強
         const linkifyText = (text) => {
           if (!text) return '';
-          return text
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
+          return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
             .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">$1</a>');
         };
 
-        // 圖片預覽（新增）
-        const openImagePreview = (url) => { previewImage.value = url; };
+        // 檔案圖示
+        const getFileIcon = (name) => {
+          if (!name) return '📄';
+          const ext = name.split('.').pop().toLowerCase();
+          const icons = {
+            pdf: '📕', doc: '📘', docx: '📘', xls: '📗', xlsx: '📗',
+            ppt: '📙', pptx: '📙', zip: '📦', rar: '📦', '7z': '📦',
+            jpg: '🖼️', jpeg: '🖼️', png: '🖼️', gif: '🖼️', svg: '🖼️', webp: '🖼️',
+            mp4: '🎬', mov: '🎬', avi: '🎬', mp3: '🎵', wav: '🎵',
+            txt: '📝', csv: '📊', json: '📋', html: '🌐', css: '🎨', js: '⚡',
+          };
+          return icons[ext] || '📄';
+        };
+
+        // ===== Cloudinary 上傳核心函式 =====
+        const uploadToCloudinary = async (file, folder, resourceType = 'auto') => {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('upload_preset', cloudinaryConfig.uploadPreset);
+          formData.append('folder', folder);
+          const endpoint = resourceType === 'image'
+            ? `https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/image/upload`
+            : `https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/auto/upload`;
+          const response = await fetch(endpoint, { method: 'POST', body: formData });
+          if (!response.ok) throw new Error('上傳失敗');
+          return await response.json();
+        };
 
         // ===== 深色模式 =====
         const toggleDarkMode = () => {
@@ -1123,9 +1257,7 @@
           catch (e) { if (e.code !== 'auth/popup-closed-by-user') { error.value = '登入失敗：' + e.message; } }
         };
         const signOut = async () => {
-          if (currentUser.value) {
-            await db.collection('online').doc(currentUser.value.uid).delete().catch(()=>{});
-          }
+          if (currentUser.value) await db.collection('online').doc(currentUser.value.uid).delete().catch(()=>{});
           await auth.signOut();
           currentUser.value = null; isAuthorized.value = false; role.value = '';
         };
@@ -1133,17 +1265,9 @@
         // ===== 初始化 =====
         const initialize = () => {
           if (darkMode.value) document.documentElement.classList.add('dark');
-
-          // 修正：瀏覽器關閉時清除在線狀態
           window.addEventListener('beforeunload', () => {
-            if (currentUser.value) {
-              const url = `https://firestore.googleapis.com/v1/projects/tn-kanban/databases/(default)/documents/online/${currentUser.value.uid}`;
-              navigator.sendBeacon && fetch(url, { method: 'DELETE', keepalive: true }).catch(()=>{});
-              // 備用方案：直接刪除
-              db.collection('online').doc(currentUser.value.uid).delete().catch(()=>{});
-            }
+            if (currentUser.value) db.collection('online').doc(currentUser.value.uid).delete().catch(()=>{});
           });
-
           auth.onAuthStateChanged(async (user) => {
             if (user) {
               loading.value = true;
@@ -1173,7 +1297,6 @@
           });
         };
 
-        // ===== 啟動所有監聽 =====
         const startAllListeners = () => {
           unsubBoards = db.collection('boards').orderBy('createdAt','asc').onSnapshot(s => {
             boards.value = s.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -1184,17 +1307,12 @@
           });
           unsubDocs = db.collection('documents').onSnapshot(s => {
             docList.value = s.docs.map(d => ({ id: d.id, ...d.data() }));
-            if (docList.value.length === 0) {
-              db.collection('documents').doc('main').set({ title: '主文件', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-            }
+            if (docList.value.length === 0) db.collection('documents').doc('main').set({ title: '主文件', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
           });
           unsubChat = db.collection('chat').orderBy('time').onSnapshot(s => {
             chatMessages.value = s.docs.map(d => ({ id: d.id, ...d.data() }));
             nextTick(() => { const box = document.getElementById('chatBox'); if (box) box.scrollTop = box.scrollHeight; });
-            // 修正：標記訊息為已讀
-            if (currentUser.value && currentView.value === 'chat') {
-              markChatRead();
-            }
+            if (currentUser.value && currentView.value === 'chat') markChatRead();
           });
           unsubNotes = db.collection('notes').orderBy('createdAt','desc').onSnapshot(s => {
             allNotes.value = s.docs.map(d => ({ id: d.id, ...d.data() }));
@@ -1219,24 +1337,15 @@
           listenDoc();
         };
 
-        // 修正：聊天已讀標記
         const markChatRead = () => {
           if (!currentUser.value) return;
           chatMessages.value.forEach(msg => {
             if (msg.uid !== currentUser.value.uid && (!msg.readBy || !msg.readBy.includes(currentUser.value.uid))) {
-              db.collection('chat').doc(msg.id).update({
-                readBy: firebase.firestore.FieldValue.arrayUnion(currentUser.value.uid)
-              }).catch(()=>{});
+              db.collection('chat').doc(msg.id).update({ readBy: firebase.firestore.FieldValue.arrayUnion(currentUser.value.uid) }).catch(()=>{});
             }
           });
         };
-
-        // 修正：切換到聊天視圖時觸發已讀
-        watch(currentView, (v) => {
-          if (v === 'chat') {
-            nextTick(() => markChatRead());
-          }
-        });
+        watch(currentView, (v) => { if (v === 'chat') nextTick(() => markChatRead()); });
 
         // ===== 看板 =====
         watch(currentBoardId, (id) => {
@@ -1257,13 +1366,11 @@
           const id = genId();
           await db.collection('boards').doc(id).set({ name, createdAt: firebase.firestore.FieldValue.serverTimestamp(), createdBy: currentUser.value.email });
           currentBoardId.value = id; newBoardName.value = ''; showNewBoardModal.value = false;
-          addLog('建立了看板「' + name + '」');
-          showToast('看板已建立','success');
+          addLog('建立了看板「' + name + '」'); showToast('看板已建立','success');
         };
-
         const deleteBoard = async () => {
           const b = boards.value.find(b => b.id === currentBoardId.value);
-          if (!b || !confirm(`確定刪除「${b.name}」？所有卡片也會刪除！`)) return;
+          if (!b || !confirm(`確定刪除「${b.name}」？`)) return;
           const batch = db.batch();
           cards.value.filter(c => c.boardId === currentBoardId.value).forEach(c => batch.delete(db.collection('cards').doc(c.id)));
           columns.value.filter(c => c.boardId === currentBoardId.value).forEach(c => batch.delete(db.collection('columns').doc(c.id)));
@@ -1277,7 +1384,7 @@
           if (!newColumnName.value.trim() || !currentBoardId.value) return;
           const maxOrd = columns.value.length > 0 ? Math.max(...columns.value.map(c => c.orderIndex || 0)) : 0;
           await db.collection('columns').doc(genId()).set({
-            boardId: currentBoardId.value, name: newColumnName.value.trim(), color: newColumnColor.value,
+boardId: currentBoardId.value, name: newColumnName.value.trim(), color: newColumnColor.value,
             orderIndex: maxOrd + 1, createdAt: firebase.firestore.FieldValue.serverTimestamp()
           });
           newColumnName.value = ''; showNewColumnModal.value = false; showToast('欄位已建立','success');
@@ -1344,78 +1451,45 @@
           newLinkName.value = ''; newLinkUrl.value = ''; showAddLink.value = false;
         };
 
-        // 修正：上傳圖片到 Cloudinary + 自動儲存
-        const uploadImage = async (event) => {
+        // ===== 卡片圖片上傳（自動儲存）=====
+        const uploadCardImage = async (event) => {
           const file = event.target.files[0];
           if (!file) return;
           if (!file.type.startsWith('image/')) { showToast('請選擇圖片檔案', 'error'); return; }
-          if (file.size > 10 * 1024 * 1024) { showToast('圖片大小不能超過 10MB', 'error'); return; }
+          if (file.size > 10 * 1024 * 1024) { showToast('圖片不能超過 10MB', 'error'); return; }
           uploading.value = true;
           try {
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('upload_preset', cloudinaryConfig.uploadPreset);
-            formData.append('folder', 'kanban/images');
-            const response = await fetch(
-              `https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/image/upload`,
-              { method: 'POST', body: formData }
-            );
-            if (!response.ok) throw new Error('上傳失敗');
-            const data = await response.json();
+            const data = await uploadToCloudinary(file, 'kanban/images', 'image');
             if (!editingCard.value.images) editingCard.value.images = [];
             editingCard.value.images.push(data.secure_url);
-            // 自動儲存到 Firestore
             await db.collection('cards').doc(editingCard.value.id).update({ images: editingCard.value.images });
-            showToast('圖片已上傳並儲存', 'success');
-          } catch (err) {
-            console.error('上傳圖片失敗:', err);
-            showToast('上傳失敗：' + err.message, 'error');
-          } finally {
-            uploading.value = false;
-            event.target.value = '';
-          }
+            showToast('圖片已上傳', 'success');
+          } catch (err) { showToast('上傳失敗：' + err.message, 'error'); }
+          finally { uploading.value = false; event.target.value = ''; }
         };
 
-        // 修正：上傳檔案到 Cloudinary + 自動儲存
-        const uploadFile = async (event) => {
+        // ===== 卡片檔案上傳（自動儲存）=====
+        const uploadCardFile = async (event) => {
           const file = event.target.files[0];
           if (!file) return;
-          if (file.size > 10 * 1024 * 1024) { showToast('檔案大小不能超過 10MB', 'error'); return; }
+          if (file.size > 10 * 1024 * 1024) { showToast('檔案不能超過 10MB', 'error'); return; }
           uploading.value = true;
           try {
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('upload_preset', cloudinaryConfig.uploadPreset);
-            formData.append('folder', 'kanban/files');
-            const response = await fetch(
-              `https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/auto/upload`,
-              { method: 'POST', body: formData }
-            );
-            if (!response.ok) throw new Error('上傳失敗');
-            const data = await response.json();
+            const data = await uploadToCloudinary(file, 'kanban/files');
             if (!editingCard.value.files) editingCard.value.files = [];
             editingCard.value.files.push({ name: file.name, url: data.secure_url });
-            // 自動儲存到 Firestore
             await db.collection('cards').doc(editingCard.value.id).update({ files: editingCard.value.files });
-            showToast('檔案已上傳並儲存', 'success');
-          } catch (err) {
-            console.error('上傳檔案失敗:', err);
-            showToast('上傳失敗：' + err.message, 'error');
-          } finally {
-            uploading.value = false;
-            event.target.value = '';
-          }
+            showToast('檔案已上傳', 'success');
+          } catch (err) { showToast('上傳失敗：' + err.message, 'error'); }
+          finally { uploading.value = false; event.target.value = ''; }
         };
 
-        // 新增：移除圖片（自動儲存）
-        const removeImage = async (index) => {
+        const removeCardImage = async (index) => {
           editingCard.value.images.splice(index, 1);
           await db.collection('cards').doc(editingCard.value.id).update({ images: editingCard.value.images });
           showToast('圖片已移除', 'success');
         };
-
-        // 新增：移除檔案（自動儲存）
-        const removeFile = async (index) => {
+        const removeCardFile = async (index) => {
           editingCard.value.files.splice(index, 1);
           await db.collection('cards').doc(editingCard.value.id).update({ files: editingCard.value.files });
           showToast('附件已移除', 'success');
@@ -1488,34 +1562,25 @@
           };
           reader.readAsText(file);
         };
-
-        // 修正：分批匯入，避免超過 Firestore batch 500 筆限制
         const executeImport = async () => {
           if (!importPreview.value) return;
           const confirmMsg = importMode.value === 'merge' ? '確定合併匯入？' : '確定覆蓋匯入？所有資料會被清除！';
           if (!confirm(confirmMsg)) return;
-
           const data = importPreview.value.rawData;
           const operations = [];
           const bMap = {}, cMap = {};
-
-          // 覆蓋模式：先收集刪除操作
           if (importMode.value === 'replace') {
             cards.value.forEach(c => operations.push((batch) => batch.delete(db.collection('cards').doc(c.id))));
             columns.value.forEach(c => operations.push((batch) => batch.delete(db.collection('columns').doc(c.id))));
             boards.value.forEach(b => operations.push((batch) => batch.delete(db.collection('boards').doc(b.id))));
           }
-
-          // 收集新增操作
           if (data.boards) data.boards.forEach(b => {
-            const nid = importMode.value === 'merge' ? genId() : b.id;
-            bMap[b.id] = nid;
+            const nid = importMode.value === 'merge' ? genId() : b.id; bMap[b.id] = nid;
             const bData = { ...b, id: nid, name: importMode.value === 'merge' ? b.name + ' (匯入)' : b.name };
             operations.push((batch) => batch.set(db.collection('boards').doc(nid), bData));
           });
           if (data.columns) data.columns.forEach(c => {
-            const nid = importMode.value === 'merge' ? genId() : c.id;
-            cMap[c.id] = nid;
+            const nid = importMode.value === 'merge' ? genId() : c.id; cMap[c.id] = nid;
             const cData = { ...c, id: nid, boardId: bMap[c.boardId] || c.boardId };
             operations.push((batch) => batch.set(db.collection('columns').doc(nid), cData));
           });
@@ -1524,17 +1589,13 @@
             const cData = { ...c, id: nid, boardId: bMap[c.boardId] || c.boardId, columnId: cMap[c.columnId] || c.columnId };
             operations.push((batch) => batch.set(db.collection('cards').doc(nid), cData));
           });
-
-          // 分批提交（每批最多 499 筆）
           const chunkSize = 499;
           for (let i = 0; i < operations.length; i += chunkSize) {
             const batch = db.batch();
             operations.slice(i, i + chunkSize).forEach(op => op(batch));
             await batch.commit();
           }
-
-          showToast('匯入完成！','success'); closeImportModal();
-          addLog('匯入了備份資料');
+          showToast('匯入完成！','success'); closeImportModal(); addLog('匯入了備份資料');
         };
 
         // ===== 共同編輯 =====
@@ -1553,10 +1614,7 @@
             }
           });
         };
-
         const switchDoc = (id) => { currentDocId.value = id; listenDoc(); };
-
-        // 修正：降低版本紀錄儲存頻率（每 5 分鐘最多一次）
         const onDocInput = () => {
           if (isRemoteDocUpdate) return;
           docSaveStatus.value = '儲存中...';
@@ -1566,8 +1624,6 @@
               content: docContent.value, lastEditBy: currentUser.value.uid,
               lastEditName: currentUser.value.displayName, time: firebase.firestore.FieldValue.serverTimestamp(), locked: false
             });
-
-            // 修正：版本紀錄節流 — 每 5 分鐘最多儲存一次版本
             const now = Date.now();
             if (now - lastVersionTime > 5 * 60 * 1000) {
               await db.collection('doc-versions').add({
@@ -1576,18 +1632,14 @@
               });
               lastVersionTime = now;
             }
-
             docSaveStatus.value = '已儲存 ✓';
           }, 1500);
         };
-
         const createDoc = async () => {
           const title = prompt('請輸入文件名稱：'); if (!title) return;
           const docRef = await db.collection('documents').add({ title, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-          currentDocId.value = docRef.id; listenDoc();
-          addLog('建立了文件「' + title + '」');
+          currentDocId.value = docRef.id; listenDoc(); addLog('建立了文件「' + title + '」');
         };
-
         const createMeetingDoc = async () => {
           const dateStr = new Date().toLocaleDateString('zh-TW');
           const title = `會議記錄 ${dateStr}`;
@@ -1597,10 +1649,8 @@
             content: template, lastEditBy: currentUser.value.uid, lastEditName: currentUser.value.displayName,
             time: firebase.firestore.FieldValue.serverTimestamp(), locked: false
           });
-          currentDocId.value = docRef.id; listenDoc();
-          addLog('建立了會議記錄');
+          currentDocId.value = docRef.id; listenDoc(); addLog('建立了會議記錄');
         };
-
         const removeDoc = async (id) => {
           if (!confirm('確定刪除此文件？')) return;
           await db.collection('documents').doc(id).delete();
@@ -1608,27 +1658,23 @@
           if (currentDocId.value === id) { currentDocId.value = 'main'; listenDoc(); }
           addLog('刪除了一份文件');
         };
-
         const exportDoc = () => {
           const d = docList.value.find(d => d.id === currentDocId.value);
           const blob = new Blob([docContent.value], { type: 'text/plain;charset=utf-8' });
           const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
           a.download = (d?.title || '文件') + '.txt'; a.click();
         };
-
         const toggleDocLock = async () => {
           const snap = await db.collection('docs-content').doc(currentDocId.value).get();
           const locked = snap.exists ? !snap.data().locked : true;
           await db.collection('docs-content').doc(currentDocId.value).update({ locked });
           addLog(locked ? '鎖定了文件' : '解鎖了文件');
         };
-
         const showDocVersions = async () => {
           const s = await db.collection('doc-versions').where('docId','==',currentDocId.value).orderBy('time','desc').limit(20).get();
           docVersions.value = s.docs.map(d => ({ id: d.id, ...d.data() }));
           showVersionModal.value = true;
         };
-
         const restoreVersion = async (v) => {
           if (!confirm('確定還原此版本？')) return;
           await db.collection('docs-content').doc(currentDocId.value).set({
@@ -1650,17 +1696,105 @@
           chatInput.value = '';
         };
 
-        // ===== 公告分享 =====
+        // ===== 分享功能 — 圖片上傳 =====
+        const onNoteImageUpload = async (event) => {
+          const files = Array.from(event.target.files);
+          if (files.length === 0) return;
+          noteUploading.value = true;
+          let done = 0;
+          try {
+            for (const file of files) {
+              if (!file.type.startsWith('image/')) continue;
+              if (file.size > 10 * 1024 * 1024) { showToast(`${file.name} 超過 10MB，已跳過`, 'error'); continue; }
+              noteUploadProgress.value = `${++done}/${files.length}`;
+              const data = await uploadToCloudinary(file, 'kanban/share-images', 'image');
+              newNoteImages.value.push(data.secure_url);
+            }
+            showToast(`已上傳 ${done} 張圖片`, 'success');
+          } catch (err) { showToast('上傳失敗：' + err.message, 'error'); }
+          finally { noteUploading.value = false; noteUploadProgress.value = ''; event.target.value = ''; }
+        };
+
+        // ===== 分享功能 — 檔案上傳 =====
+        const onNoteFileUpload = async (event) => {
+          const files = Array.from(event.target.files);
+          if (files.length === 0) return;
+          noteUploading.value = true;
+          let done = 0;
+          try {
+            for (const file of files) {
+              if (file.size > 10 * 1024 * 1024) { showToast(`${file.name} 超過 10MB，已跳過`, 'error'); continue; }
+              noteUploadProgress.value = `${++done}/${files.length}`;
+              const data = await uploadToCloudinary(file, 'kanban/share-files');
+              newNoteFiles.value.push({ name: file.name, url: data.secure_url });
+            }
+            showToast(`已上傳 ${done} 個檔案`, 'success');
+          } catch (err) { showToast('上傳失敗：' + err.message, 'error'); }
+          finally { noteUploading.value = false; noteUploadProgress.value = ''; event.target.value = ''; }
+        };
+
+        // ===== 分享功能 — 拖曳上傳 =====
+        const onNoteFileDrop = async (event) => {
+          noteDragActive.value = false;
+          const files = Array.from(event.dataTransfer.files);
+          if (files.length === 0) return;
+          noteUploading.value = true;
+          let done = 0;
+          try {
+            for (const file of files) {
+              if (file.size > 10 * 1024 * 1024) { showToast(`${file.name} 超過 10MB，已跳過`, 'error'); continue; }
+              noteUploadProgress.value = `${++done}/${files.length}`;
+              if (file.type.startsWith('image/')) {
+                const data = await uploadToCloudinary(file, 'kanban/share-images', 'image');
+                newNoteImages.value.push(data.secure_url);
+              } else {
+                const data = await uploadToCloudinary(file, 'kanban/share-files');
+                newNoteFiles.value.push({ name: file.name, url: data.secure_url });
+              }
+            }
+            showToast(`已上傳 ${done} 個檔案`, 'success');
+          } catch (err) { showToast('上傳失敗：' + err.message, 'error'); }
+          finally { noteUploading.value = false; noteUploadProgress.value = ''; }
+        };
+
+        // ===== 分享功能 — Google Drive 連結 =====
+        const addNoteGdriveLink = () => {
+          if (!newNoteGdriveUrl.value) return showToast('請輸入 Google Drive 連結', 'error');
+          newNoteGdriveLinks.value.push({
+            name: newNoteGdriveName.value || newNoteGdriveUrl.value,
+            url: newNoteGdriveUrl.value
+          });
+          newNoteGdriveName.value = ''; newNoteGdriveUrl.value = ''; showNoteGdriveInput.value = false;
+        };
+
+        // ===== 分享功能 — 新增分享（含圖片、檔案、Drive 連結）=====
         const addNote = async () => {
-          if (!newNoteTitle.value.trim() || !newNoteContent.value.trim()) return showToast('請填寫標題和內容','error');
+          if (!newNoteTitle.value.trim()) return showToast('請填寫標題','error');
+          if (!newNoteContent.value.trim() && newNoteImages.value.length === 0 && newNoteFiles.value.length === 0 && newNoteGdriveLinks.value.length === 0) {
+            return showToast('請填寫內容或上傳檔案','error');
+          }
           const title = newNoteTitle.value.trim();
           await db.collection('notes').add({
-            title, content: newNoteContent.value.trim(), pinned: newNotePinned.value,
-            author: currentUser.value.displayName, createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            title,
+            content: newNoteContent.value.trim(),
+            pinned: newNotePinned.value,
+            images: [...newNoteImages.value],
+            files: [...newNoteFiles.value],
+            gdriveLinks: [...newNoteGdriveLinks.value],
+            author: currentUser.value.displayName,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
           });
           addLog('分享了「' + title + '」');
-          newNoteTitle.value = ''; newNoteContent.value = ''; newNotePinned.value = false;
+          // 清空表單
+          newNoteTitle.value = '';
+          newNoteContent.value = '';
+          newNotePinned.value = false;
+          newNoteImages.value = [];
+          newNoteFiles.value = [];
+          newNoteGdriveLinks.value = [];
+          showToast('已分享', 'success');
         };
+
         const toggleNotePin = async (note) => { await db.collection('notes').doc(note.id).update({ pinned: !note.pinned }); };
         const deleteNote = async (id) => { if (confirm('確定刪除？')) { await db.collection('notes').doc(id).delete(); addLog('刪除了一則分享'); } };
 
@@ -1698,29 +1832,36 @@
           draggingCard, calendarDate, ganttFilterAssignee,
           showAddLink, newLinkName, newLinkUrl,
           importMode, importFileInput, importPreview, uploading, toast,
-          previewImage, // 新增
+          previewImage,
           darkMode, themeColor, views, themeColors,
           docList, currentDocId, docContent, docLocked, docSaveStatus, docVersions,
           chatMessages, chatInput,
+          // 分享功能（升級版）
           allNotes, newNoteTitle, newNoteContent, newNotePinned, noteSearch,
+          newNoteImages, newNoteFiles, newNoteGdriveLinks,
+          showNoteGdriveInput, newNoteGdriveName, newNoteGdriveUrl,
+          noteUploading, noteUploadProgress, noteDragActive,
           myTodos, newTodoText, activityLogs, onlineUsers,
           columnColors, labelNames,
           sortedColumns, displayCards, calendarTitle, calendarDays, ganttDates,
-          allAssignees, filteredGanttCards, filteredNotes, checklistProgress, // 新增 checklistProgress
+          allAssignees, filteredGanttCards, filteredNotes, checklistProgress,
           formatDate, formatDateTime, formatMsgTime, formatLogTime, formatNoteTime,
-          getDueDateClass, getLabelBgClass, isToday, linkifyText,
-          openImagePreview, // 新增
+          getDueDateClass, getLabelBgClass, isToday, linkifyText, getFileIcon,
           toggleDarkMode, setThemeColor,
           createBoard, deleteBoard, createColumn, openColumnMenu, openEditColumnModal,
           saveColumn, confirmArchiveColumn, archiveColumn,
           openNewCardModal, createCard, openCardDetail, closeCardDetail, saveCard, deleteCard,
           toggleLabel, addCardLink, addComment,
-          uploadImage, uploadFile, removeImage, removeFile, // 修正：確保 return
+          uploadCardImage, uploadCardFile, removeCardImage, removeCardFile,
           onCardDragStart, onCardDragEnd, onCardDrop, onCalendarDrop, prevMonth, nextMonth,
           exportBackup, openImportModal, closeImportModal, handleImportFile, executeImport,
           switchDoc, onDocInput, createDoc, createMeetingDoc, removeDoc, exportDoc,
           toggleDocLock, showDocVersions, restoreVersion,
-          sendChat, addNote, toggleNotePin, deleteNote,
+          sendChat,
+          // 分享功能
+          addNote, toggleNotePin, deleteNote,
+          onNoteImageUpload, onNoteFileUpload, onNoteFileDrop,
+          addNoteGdriveLink,
           addTodo, toggleTodo, deleteTodo,
           showToast
         };
