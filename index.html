@@ -1059,18 +1059,6 @@ const removeBoardMember = async (email) => {
           showToast(`看板已設為${newVis === 'private' ? '私人 🔒' : '公開 🌐'}`, 'success');
         };
 
-const toggleBoardVisibility = async () => {
-          const board = currentBoardObj.value; if(!board)return;
-          const newVis = board.visibility==='private' ? 'public' : 'private';
-          const updateData = {visibility:newVis};
-          if(newVis==='private' && (!board.members||board.members.length===0)){
-            updateData.members = [{email:currentUser.value.email.toLowerCase(), role:'admin', name:currentUser.value.displayName}];
-          }
-          await db.collection('boards').doc(currentBoardId.value).update(updateData);
-          addLog(`將看板「${board.name}」設為${newVis==='private'?'私人':'公開'}`);
-          showToast(`看板已設為${newVis==='private'?'私人 🔒':'公開 🌐'}`,'success');
-        };
-
         // 欄位
         const createColumn = async () => {
           if(!newColumnName.value.trim()||!currentBoardId.value)return;
@@ -1317,4 +1305,5 @@ const toggleBoardVisibility = async () => {
   </script>
 </body>
 </html>
+
 
