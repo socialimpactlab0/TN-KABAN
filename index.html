@@ -127,7 +127,7 @@ body {
         <!-- 看板視圖 -->
         <div v-if="currentView === 'board'" class="h-full p-3 md:p-4 overflow-x-auto" style="min-height: calc(100vh - 160px);">
           <div class="flex space-x-4 h-full snap-x snap-mandatory md:snap-none" style="-webkit-overflow-scrolling: touch;">
-            <div v-for="column in sortedColumns" :key="column.id" :data-column-id="col.id" class="flex-shrink-0 w-72 md:w-80 snap-center bg-gray-100 dark:bg-gray-800 rounded-xl flex flex-col max-h-full"
+            <div v-for="column in sortedColumns" :key="column.id" :data-column-id="column.id" class="flex-shrink-0 w-72 md:w-80 snap-center bg-gray-100 dark:bg-gray-800 rounded-xl flex flex-col max-h-full"
               @dragover.prevent="canEditCurrentBoard && $event.currentTarget.classList.add('drag-over')"
               @dragleave="$event.currentTarget.classList.remove('drag-over')"
               @drop="onCardDrop($event, column)">
@@ -143,7 +143,7 @@ body {
               </div>
               <div class="flex-1 overflow-y-auto p-2 space-y-2 scrollbar-thin">
                 <div v-for="card in cards.filter(c => c.columnId === column.id).sort((a, b) => a.orderIndex - b.orderIndex)" :key="card.id"
-                  :draggable="canEditCurrentBoard" @dragstart="onCardDragStart($event, card)" @dragend="onCardDragEnd" @click="openCardDetail(card)"
+  :data-card-id="card.id" :draggable="canEditCurrentBoard" @dragstart="onCardDragStart($event, card)" @dragend="onCardDragEnd" @click="openCardDetail(card)"
                   class="bg-white dark:bg-gray-700 p-3 rounded-lg shadow-sm hover:shadow-md cursor-pointer transition-shadow border border-gray-200 dark:border-gray-600"
                   :class="{ 'card-dragging': draggingCard?.id === card.id }">
                   <div v-if="card.labels && card.labels.length > 0" class="flex flex-wrap gap-1 mb-2">
@@ -189,7 +189,7 @@ body {
                 @dragover.prevent @drop="onCalendarDrop($event, day.date)">
                 <div class="text-xs text-gray-500 mb-1">{{ day.dayNum }}</div>
                 <div class="space-y-1">
-                  <div v-for="card in ..." :key="card.id" :data-card-id="card.id" draggable="true"
+                  <div v-for="card in day.cards" :key="card.id + card._label" :data-card-id="card.id" draggable="true"
                      @dragstart="onCardDragStart($event, card)"
                     @click="openCardDetail(card)"
                     class="text-xs p-1 rounded truncate cursor-pointer hover:opacity-80"
@@ -1317,6 +1317,7 @@ const removeBoardMember = async (email) => {
         };
       }
     }).mount('#app');
+    </script>
 <script>
 (function() {
   let dragEl = null;
@@ -1368,6 +1369,7 @@ const removeBoardMember = async (email) => {
   </script>
 </body>
 </html>
+
 
 
 
