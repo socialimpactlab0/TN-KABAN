@@ -1258,15 +1258,17 @@ const removeBoardMember = async (email) => {
         // 紀錄
         const addLog = async (action) => {await db.collection('logs').add({user:currentUser.value.displayName,action,time:firebase.firestore.FieldValue.serverTimestamp()});};
 
-        onMounted(()=>{initialize();});
-        document.addEventListener('touch-card-drop', (e) => {
-  const { cardId, columnId } = e.detail;
-  const card = cards.value.find(c => c.id === cardId);
-  if (card && card.columnId !== columnId) {
-    db.collection('cards').doc(cardId).update({ columnId: columnId });
-    showToast('卡片已移動', 'success');
-  }
-});
+        onMounted(()=>{
+          initialize();
+          document.addEventListener('touch-card-drop', (e) => {
+            const { cardId, columnId } = e.detail;
+            const card = cards.value.find(c => c.id === cardId);
+            if (card && card.columnId !== columnId) {
+              db.collection('cards').doc(cardId).update({ columnId: columnId });
+              showToast('卡片已移動', 'success');
+            }
+          });
+        });
         onUnmounted(()=>{[unsubBoards,unsubColumns,unsubCards,unsubUsers,unsubDocs,unsubChat,unsubNotes,unsubTodos,unsubLogs,unsubOnline,unsubscribeDoc,unsubAllCards].forEach(u=>{if(u)u();});});
 
         return {
@@ -1369,6 +1371,7 @@ const removeBoardMember = async (email) => {
   </script>
 </body>
 </html>
+
 
 
 
