@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>台南團隊看板系統</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -32,6 +32,15 @@
     .drop-zone { transition: all 0.2s; }
     .drop-zone.drag-active { border-color: #6366f1; background-color: #eef2ff; }
     .dark .drop-zone.drag-active { border-color: #818cf8; background-color: rgba(99,102,241,0.1); }
+    /* 手機優化 */
+@media (max-width: 768px) {
+  .modal-body { font-size: 14px; }
+  input, textarea, select { font-size: 16px !important; }
+}
+body {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
   </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 min-h-screen transition-colors duration-300">
@@ -74,54 +83,51 @@
 
     <!-- ===== 主介面 ===== -->
     <div v-else class="min-h-screen flex flex-col">
-      <header class="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 px-4 py-3">
-        <div class="flex items-center justify-between flex-wrap gap-2">
-          <div class="flex items-center space-x-4">
-            <h1 class="text-xl font-bold text-gray-800 dark:text-gray-200 whitespace-nowrap">📋 團隊協作</h1>
-            <div class="flex items-center space-x-2" v-if="currentView === 'board' || currentView === 'calendar' || currentView === 'gantt'">
-              <select v-model="currentBoardId" class="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-indigo-500 outline-none min-w-32">
-                <option value="">選擇看板</option>
-                <option v-for="board in accessibleBoards" :key="board.id" :value="board.id">{{ board.name }} {{ board.visibility === 'private' ? '🔒' : '' }}</option>
-              </select>
-              <button v-if="role === 'admin'" @click="showNewBoardModal = true" class="px-3 py-1.5 text-sm bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 whitespace-nowrap">+ 新增</button>
-              <button v-if="currentBoardId && canManageCurrentBoard" @click="openBoardMembers" class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 whitespace-nowrap">
-                👥 {{ currentBoardObj?.visibility === 'private' ? '成員' : '公開' }}
-              </button>
-            </div>
-          </div>
-          <div class="flex bg-gray-100 dark:bg-gray-700 rounded-lg p-1 overflow-x-auto">
-            <button v-for="v in views" :key="v.id" @click="currentView = v.id" :class="currentView === v.id ? 'bg-white dark:bg-gray-600 shadow-sm' : ''" class="px-3 py-1 text-sm rounded-md transition-all whitespace-nowrap dark:text-gray-200">{{ v.icon }} {{ v.name }}</button>
-          </div>
-          <div class="flex items-center space-x-3">
-            <button @click="toggleDarkMode" class="px-2 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600">{{ darkMode ? '☀️' : '🌙' }}</button>
-            <div class="relative">
-              <button @click="showToolMenu = !showToolMenu" class="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 flex items-center space-x-1"><span>⚙️ 工具</span><span class="text-xs">▼</span></button>
-              <div v-if="showToolMenu" class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
-                <button @click="exportBackup(); showToolMenu = false" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"><span>📥</span><span>匯出備份</span></button>
-                <button v-if="role === 'admin'" @click="openImportModal(); showToolMenu = false" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"><span>📂</span><span>匯入備份</span></button>
-                <div v-if="role === 'admin'" class="border-t border-gray-100 dark:border-gray-700 my-1"></div>
-                <button v-if="role === 'admin'" @click="showUserManagement = true; showToolMenu = false" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"><span>👥</span><span>使用者管理</span></button>
-                <button @click="showThemeSettings = true; showToolMenu = false" class="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center space-x-2"><span>🎨</span><span>主題設定</span></button>
-                <button v-if="canManageCurrentBoard && currentBoardId" @click="deleteBoard(); showToolMenu = false" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center space-x-2"><span>🗑️</span><span>刪除看板</span></button>
-              </div>
-            </div>
-            <div class="flex items-center space-x-2 pl-3 border-l border-gray-200 dark:border-gray-700">
-              <img :src="currentUser.photoURL" class="w-8 h-8 rounded-full" v-if="currentUser.photoURL">
-              <div class="hidden sm:block">
-                <div class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ currentUser.displayName || currentUser.email }}</div>
-                <div class="text-xs text-gray-500">{{ role === 'admin' ? '管理員' : '成員' }}</div>
-              </div>
-              <button @click="signOut" class="px-2 py-1 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">登出</button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <header class="bg-white dark:bg-gray-800 shadow-sm border-b dark:border-gray-700 px-3 md:px-6 py-2 md:py-3">
+  <div class="flex flex-wrap items-center gap-2 md:gap-4">
+    <h1 class="text-base md:text-xl font-bold text-gray-800 dark:text-white whitespace-nowrap">📋 看板</h1>
+    <select v-model="currentBoardId"
+            class="flex-1 min-w-0 md:flex-none md:w-48 text-sm border rounded-lg px-2 py-1.5 dark:bg-gray-700 dark:text-white dark:border-gray-600">
+      <option v-for="board in accessibleBoards" :key="board.id" :value="board.id">
+        {{ board.visibility === 'private' ? '🔒' : '🌐' }} {{ board.name }}
+      </option>
+    </select>
+    <button v-if="role === 'admin'" @click="showNewBoardModal = true"
+            class="text-xs md:text-sm px-2 py-1 md:px-3 md:py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg">
+      ＋ <span class="hidden md:inline">新增</span>
+    </button>
+    <div class="flex items-center gap-1 md:gap-2 ml-auto">
+      <button v-if="canManageCurrentBoard" @click="openBoardMembers"
+              class="text-xs md:text-sm px-2 py-1 md:px-3 md:py-1.5 bg-blue-500 text-white rounded-lg">
+        👥 <span class="hidden md:inline">成員</span>
+      </button>
+      <button @click="toggleDarkMode" class="text-xs md:text-sm px-2 py-1 rounded-lg bg-gray-100 dark:bg-gray-700">
+        {{ darkMode ? '☀️' : '🌙' }}
+      </button>
+      <button @click="signOut" class="text-xs md:text-sm px-2 py-1 text-red-500">
+        🚪 <span class="hidden md:inline">登出</span>
+      </button>
+    </div>
+  </div>
+  <div class="flex gap-1 mt-2 overflow-x-auto pb-1 -mx-3 px-3 md:mx-0 md:px-0">
+    <button v-for="tab in ['board','calendar','gantt','docs','chat','share','todo','log']"
+            :key="tab"
+            @click="currentView = tab"
+            :class="currentView === tab
+              ? 'bg-blue-500 text-white'
+              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'"
+            class="px-2.5 py-1 text-xs md:text-sm rounded-lg whitespace-nowrap flex-shrink-0">
+      {{ {board:'📋看板', calendar:'📅日曆', gantt:'📊甘特', docs:'📝文件',
+          chat:'💬聊天', share:'📌分享', todo:'✅待辦', log:'📜紀錄'}[tab] }}
+    </button>
+  </div>
+</header>
 
       <main class="flex-1 overflow-hidden">
         <!-- 看板視圖 -->
-        <div v-if="currentView === 'board'" class="h-full p-4 overflow-x-auto">
-          <div class="flex space-x-4 h-full">
-            <div v-for="column in sortedColumns" :key="column.id" class="flex-shrink-0 w-80 bg-gray-100 dark:bg-gray-800 rounded-xl flex flex-col max-h-full"
+        <div v-if="currentView === 'board'" class="h-full p-3 md:p-4 overflow-x-auto" style="min-height: calc(100vh - 160px);">
+          <div class="flex space-x-4 h-full snap-x snap-mandatory md:snap-none" style="-webkit-overflow-scrolling: touch;">
+            <div v-for="column in sortedColumns" :key="column.id" :data-column-id="col.id" class="flex-shrink-0 w-72 md:w-80 snap-center bg-gray-100 dark:bg-gray-800 rounded-xl flex flex-col max-h-full"
               @dragover.prevent="canEditCurrentBoard && $event.currentTarget.classList.add('drag-over')"
               @dragleave="$event.currentTarget.classList.remove('drag-over')"
               @drop="onCardDrop($event, column)">
@@ -160,7 +166,7 @@
                 </div>
               </div>
             </div>
-            <div v-if="canEditCurrentBoard" class="flex-shrink-0 w-80">
+            <div v-if="canEditCurrentBoard" class="flex-shrink-0 w-72 md:w-80 snap-center">
               <button @click="showNewColumnModal = true" class="w-full p-4 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-gray-500 hover:border-indigo-500 hover:text-indigo-500 transition-colors">+ 新增欄位</button>
             </div>
           </div>
@@ -183,8 +189,9 @@
                 @dragover.prevent @drop="onCalendarDrop($event, day.date)">
                 <div class="text-xs text-gray-500 mb-1">{{ day.dayNum }}</div>
                 <div class="space-y-1">
-                  <div v-for="card in day.cards" :key="card.id + card._label" :draggable="canEditCurrentBoard"
-                    @dragstart="onCardDragStart($event, card)" @click="openCardDetail(card)"
+                  <div v-for="card in ..." :key="card.id" :data-card-id="card.id" draggable="true"
+                     @dragstart="onCardDragStart($event, card)"
+                    @click="openCardDetail(card)"
                     class="text-xs p-1 rounded truncate cursor-pointer hover:opacity-80"
                     :class="card._label === '開始' ? 'bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300' : 'bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300'">
                     {{ card._label === '開始' ? '▶' : '■' }} {{ card.title }}</div>
@@ -563,14 +570,14 @@
     </div>
 
     <!-- 卡片詳情 -->
-    <div v-if="showCardDetail" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-        <div class="p-4 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex items-center justify-between">
+    <div v-if="showCardDetail" class="fixed inset-0 bg-black/50 flex items-end md:items-center justify-center z-50 p-0 md:p-4">
+  <div class="bg-white dark:bg-gray-800 rounded-t-2xl md:rounded-2xl shadow-2xl w-full md:max-w-4xl h-[92vh] md:h-auto md:max-h-[90vh] overflow-hidden flex flex-col">
+       <div class="p-3 md:p-4 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex items-center justify-between">
           <input v-model="editingCard.title" type="text" class="text-xl font-bold text-gray-800 dark:text-gray-200 bg-transparent border-none outline-none flex-1 mr-4" placeholder="卡片標題" :readonly="!canEditCurrentBoard">
           <button @click="closeCardDetail" class="text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
         </div>
         <div class="flex-1 overflow-y-auto"><div class="flex flex-col md:flex-row">
-          <div class="flex-1 p-4 space-y-4">
+          <div class="flex-1 p-3 md:p-4 space-y-4">
             <div><h4 class="font-medium text-gray-700 dark:text-gray-300 mb-2">📝 描述</h4>
               <textarea v-model="editingCard.description" rows="3" class="w-full px-3 py-2 border dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 dark:text-gray-200 outline-none resize-none" placeholder="新增描述..." :readonly="!canEditCurrentBoard"></textarea>
             </div>
@@ -1252,6 +1259,14 @@ const removeBoardMember = async (email) => {
         const addLog = async (action) => {await db.collection('logs').add({user:currentUser.value.displayName,action,time:firebase.firestore.FieldValue.serverTimestamp()});};
 
         onMounted(()=>{initialize();});
+        document.addEventListener('touch-card-drop', (e) => {
+  const { cardId, columnId } = e.detail;
+  const card = cards.value.find(c => c.id === cardId);
+  if (card && card.columnId !== columnId) {
+    db.collection('cards').doc(cardId).update({ columnId: columnId });
+    showToast('卡片已移動', 'success');
+  }
+});
         onUnmounted(()=>{[unsubBoards,unsubColumns,unsubCards,unsubUsers,unsubDocs,unsubChat,unsubNotes,unsubTodos,unsubLogs,unsubOnline,unsubscribeDoc,unsubAllCards].forEach(u=>{if(u)u();});});
 
         return {
@@ -1302,8 +1317,57 @@ const removeBoardMember = async (email) => {
         };
       }
     }).mount('#app');
+<script>
+(function() {
+  let dragEl = null;
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let isDragging = false;
+
+  document.addEventListener('touchstart', function(e) {
+    const card = e.target.closest('[data-card-id]');
+    if (!card) return;
+    dragEl = card;
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    isDragging = false;
+    setTimeout(function() {
+      if (dragEl) {
+        dragEl.style.opacity = '0.5';
+        isDragging = true;
+      }
+    }, 300);
+  }, { passive: true });
+
+  document.addEventListener('touchmove', function(e) {
+    if (!dragEl || !isDragging) return;
+    var dx = Math.abs(e.touches[0].clientX - touchStartX);
+    if (dx > 10) e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('touchend', function(e) {
+    if (!dragEl) return;
+    dragEl.style.opacity = '1';
+    if (!isDragging) { dragEl = null; return; }
+    var touch = e.changedTouches[0];
+    var dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
+    var column = dropTarget ? dropTarget.closest('[data-column-id]') : null;
+    if (column) {
+      var cardId = dragEl.dataset.cardId;
+      var columnId = column.dataset.columnId;
+      if (cardId && columnId) {
+        document.dispatchEvent(new CustomEvent('touch-card-drop', {
+          detail: { cardId: cardId, columnId: columnId }
+        }));
+      }
+    }
+    dragEl = null;
+    isDragging = false;
+  }, { passive: true });
+})(); 
   </script>
 </body>
 </html>
+
 
 
