@@ -69,6 +69,7 @@ body {
           <span class="text-gray-700">使用 Google 帳號登入</span>
         </button>
         <p class="mt-6 text-sm text-gray-400">首次登入需要管理員授權</p>
+        <p class="mt-2 text-sm text-red-400">⚠️ 請勿使用 LINE 內建瀏覽器，請用 Chrome 或 Safari 開啟</p>
       </div>
     </div>
     <div v-else-if="!isAuthorized" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600">
@@ -1383,6 +1384,7 @@ const removeBoardMember = async (email) => {
   </script>
 </body>
 </html>
+
 
 
 
