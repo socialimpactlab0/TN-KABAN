@@ -96,11 +96,23 @@ body {
             class="text-xs md:text-sm px-2 py-1 md:px-3 md:py-1.5 bg-green-500 hover:bg-green-600 text-white rounded-lg">
       ＋ <span class="hidden md:inline">新增</span>
     </button>
-    <div class="flex items-center gap-1 md:gap-2 ml-auto">
+
+    <button v-if="role === 'admin' && currentBoardId" @click="deleteBoard"
+        class="text-xs md:text-sm px-2 py-1 md:px-3 md:py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg">
+  🗑️ <span class="hidden md:inline">刪除看板</span>
+</button>
+
+        <div class="flex items-center gap-1 md:gap-2 ml-auto">
       <button v-if="canManageCurrentBoard" @click="openBoardMembers"
               class="text-xs md:text-sm px-2 py-1 md:px-3 md:py-1.5 bg-blue-500 text-white rounded-lg">
         👥 <span class="hidden md:inline">成員</span>
       </button>
+
+ <button v-if="role === 'admin'" @click="showUserManagement = true"
+              class="text-xs md:text-sm px-2 py-1 md:px-3 md:py-1.5 bg-purple-500 text-white rounded-lg">
+        🔑 <span class="hidden md:inline">授權管理</span>
+      </button>
+      
       <button @click="toggleDarkMode" class="text-xs md:text-sm px-2 py-1 rounded-lg bg-gray-100 dark:bg-gray-700">
         {{ darkMode ? '☀️' : '🌙' }}
       </button>
@@ -1371,6 +1383,7 @@ const removeBoardMember = async (email) => {
   </script>
 </body>
 </html>
+
 
 
 
