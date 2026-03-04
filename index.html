@@ -507,9 +507,10 @@ body {
             <p class="text-4xl mb-3">🌐</p><p>此為公開看板，所有授權使用者皆可存取</p>
           </div>
         </div>
-        <div class="p-4 border-t dark:border-gray-700">
-          <button @click="showBoardMembersModal = false" class="w-full py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">關閉</button>
-        </div>
+        <div class="p-4 border-t dark:border-gray-700 space-y-2">
+  <button v-if="role === 'admin'" @click="deleteBoard" class="w-full py-2 text-red-400 hover:text-red-600 text-xs">🗑️ 刪除此看板</button>
+  <button @click="showBoardMembersModal = false" class="w-full py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">關閉</button>
+</div>
       </div>
     </div>
 
@@ -1382,6 +1383,7 @@ const removeBoardMember = async (email) => {
   </script>
 </body>
 </html>
+
 
 
 
